@@ -17,7 +17,7 @@ let values: MonitorValues = {
 
 if (Astro.request.method === 'POST') {
   values = readForm(await Astro.request.formData());
-  const result = validate(values);
+  const result = validate(values, Astro.locals.plan!.limits.minIntervalSec);
   if (result.error) error = result.error;
   else {
     const d = result.data!;
@@ -34,5 +34,5 @@ if (Astro.request.method === 'POST') {
 }
 ---
 <Dashboard title={`Edit ${m.name}`} active="monitors" subtitle="Changes apply from the next check.">
-  <MonitorForm values={values} error={error} submitLabel="Save changes" cancelHref={`/dashboard/monitor?id=${id}`} />
+  <MonitorForm values={values} error={error} submitLabel="Save changes" cancelHref={`/dashboard/monitor?id=${id}`} minIntervalSec={Astro.locals.plan!.limits.minIntervalSec} />
 </Dashboard>

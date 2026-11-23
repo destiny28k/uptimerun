@@ -81,8 +81,10 @@ interface Row {
 export async function runExpiryChecks(env: Env) {
   const now = Date.now();
   const { results } = await env.DB.prepare(
-    `SELECT id, user_id, name, url, domain_expires_at, ssl_expires_at, expiry_alerted FROM monitors
-     WHERE status != 'paused' AND expiry_checked_at < ? ORDER BY expiry_checked_at LIMIT ?`,
+    // Expiry alerts are a Pro/Business feature: Free users' monitors are skipped.
+    `SELECT m.id, m.user_id, m.name, m.url, m.domain_expires_at, m.ssl_expires_at, m.expiry_alerted
+     FROM monitors m JOIN user_plans p ON p.user_id = m.user_id AND p.plan IN ('pro', 'business')
+     WHERE m.status != 'paused' AND m.expiry_checked_at < ? ORDER BY m.expiry_checked_at LIMIT ?`,
   ).bind(now - DAY, BATCH).all<Row>();
   if (!results.length) return;
 

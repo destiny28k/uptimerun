@@ -2,7 +2,6 @@
 import { formatDuration } from './alerts';
 
 export const STATUS_DAYS = 90;
-export const FREE_STATUS_PAGE_LIMIT = 1;
 
 export interface Day { date: string; up: number | null }
 export interface Service { name: string; status: 'up' | 'down' | 'pending'; uptime: string; days: Day[] }

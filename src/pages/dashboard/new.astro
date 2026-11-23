@@ -2,18 +2,22 @@
 import { env } from 'cloudflare:workers';
 import Dashboard from '../../layouts/Dashboard.astro';
 import MonitorForm from '../../components/dash/MonitorForm.astro';
-import { countMonitors, FREE_MONITOR_LIMIT } from '../../lib/data';
+import { countMonitors } from '../../lib/data';
 import { DEFAULT_VALUES, readForm, validate } from '../../lib/monitorForm';
 
 const user = Astro.locals.user!;
-let error = '';
-let values = { ...DEFAULT_VALUES };
+const { id: planId, limits } = Astro.locals.plan!;
+const used = await countMonitors(env.DB, user.id);
+const full = used >= limits.monitors;
 
-if (Astro.request.method === 'POST') {
+let error = full ? `You’ve used all ${limits.monitors} monitors on the ${limits.name} plan. Upgrade or remove a monitor to add more.` : '';
+// Default to the fastest check the plan allows, but not faster than 1 minute.
+let values = { ...DEFAULT_VALUES, interval: String(Math.max(limits.minIntervalSec, 60)) };
+
+if (Astro.request.method === 'POST' && !full) {
   values = readForm(await Astro.request.formData());
-  const result = validate(values);
+  const result = validate(values, limits.minIntervalSec);
   if (result.error) error = result.error;
-  else if ((await countMonitors(env.DB, user.id)) >= FREE_MONITOR_LIMIT) error = `The free plan includes ${FREE_MONITOR_LIMIT} monitors. Upgrade to add more.`;
   else {
     const d = result.data!;
     const id = crypto.randomUUID();
@@ -25,6 +29,12 @@ if (Astro.request.method === 'POST') {
   }
 }
 ---
-<Dashboard title="New monitor" active="monitors" subtitle="Takes 30 seconds. We start checking within a minute.">
-  <MonitorForm values={values} error={error} submitLabel="Create monitor" cancelHref="/dashboard" />
+<Dashboard title="New monitor" active="monitors" subtitle={`Takes 30 seconds. ${used} of ${limits.monitors} monitors used on your ${limits.name} plan.`}>
+  {full && planId !== 'business' && (
+    <a href="/pricing" class="mb-6 flex items-center justify-between gap-4 rounded-xl border border-brand/30 bg-brand/[0.07] px-4 py-3 text-sm hover:bg-brand/10">
+      <span class="text-slate-200">Need more monitors? <span class="text-white font-medium">{planId === 'free' ? 'Pro gives you 50.' : 'Business gives you 200.'}</span></span>
+      <span class="font-semibold text-brand">See plans →</span>
+    </a>
+  )}
+  <MonitorForm values={values} error={error} submitLabel="Create monitor" cancelHref="/dashboard" minIntervalSec={limits.minIntervalSec} />
 </Dashboard>

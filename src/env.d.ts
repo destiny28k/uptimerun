@@ -17,5 +17,6 @@ interface Env {
 declare namespace App {
   interface Locals {
     user: { id: string; name: string; email: string } | null;
+    plan: { id: import('./lib/plans').PlanId; limits: import('./lib/plans').PlanLimits } | null;
   }
 }

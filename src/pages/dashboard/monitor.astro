@@ -26,6 +26,9 @@ if (Astro.request.method === 'POST') {
     return Astro.redirect(`/dashboard/monitor?id=${id}&tested=1`, 303);
   }
   if (action === 'resume') {
+    // Resuming counts toward the plan's monitor limit.
+    const active = await env.DB.prepare(`SELECT COUNT(*) AS n FROM monitors WHERE user_id = ? AND status != 'paused'`).bind(user.id).first<{ n: number }>();
+    if ((active?.n ?? 0) >= Astro.locals.plan!.limits.monitors) return Astro.redirect(`/dashboard/monitor?id=${id}&limit=1`, 303);
     await env.DB.prepare(`UPDATE monitors SET status = 'pending', next_check_at = 0, status_since = ? WHERE id = ? AND user_id = ?`).bind(Date.now(), id, user.id).run();
   }
   return Astro.redirect(`/dashboard/monitor?id=${id}`, 303);
@@ -69,6 +72,7 @@ const expiryRows = [
   return { ...r, days, tone, left, date: r.at ? new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '' };
 });
 const expiryPending = !m.expiry_checked_at;
+const expiryOn = Astro.locals.plan!.limits.expiryChecks;
 const btn = 'rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10';
 ---
 <Dashboard title={m.name} active="monitors">
@@ -88,6 +92,9 @@ const btn = 'rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font
     <span class="text-slate-400">{m.type === 'keyword' ? `Keyword "${m.keyword}"` : 'HTTPS'} check every {intervalLabel(m.interval_sec)}</span>
   </div>
 
+  {Astro.url.searchParams.get('limit') && (
+    <p class="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">You’ve reached the {Astro.locals.plan!.limits.monitors}-monitor limit of your plan. Pause another monitor or <a href="/pricing" class="font-semibold underline">upgrade</a> to resume this one.</p>
+  )}
   {Astro.url.searchParams.get('tested') && (
     <p class="mb-6 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-brand">Test alert sent to your alert contacts. Check your inbox or chat app.</p>
   )}
@@ -113,8 +120,14 @@ const btn = 'rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font
   <div class="mt-6 rounded-xl border border-white/10 bg-ink-900/50 p-5">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="font-semibold text-white">Domain & SSL</h2>
-      <span class="text-xs text-slate-500">{expiryPending ? 'First check runs within a few minutes' : `Checked ${ago(m.expiry_checked_at)} · we alert 30, 14, 7 and 1 day before expiry`}</span>
+      {expiryOn && <span class="text-xs text-slate-500">{expiryPending ? 'First check runs within a few minutes' : `Checked ${ago(m.expiry_checked_at)} · we alert 30, 14, 7 and 1 day before expiry`}</span>}
     </div>
+    {!expiryOn ? (
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-white/10 px-4 py-4">
+        <p class="text-sm text-slate-400">Get warned 30, 14, 7 and 1 day before your SSL certificate or domain expires.</p>
+        <a href="/pricing" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Unlock with Pro</a>
+      </div>
+    ) : (
     <div class="mt-4 grid gap-3 sm:grid-cols-2">
       {expiryRows.map((r) => (
         <div class="rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
@@ -130,6 +143,7 @@ const btn = 'rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font
         </div>
       ))}
     </div>
+    )}
   </div>
 
   <div class="mt-6 rounded-xl border border-white/10 bg-ink-900/50 p-5">

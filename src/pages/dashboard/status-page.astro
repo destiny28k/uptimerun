@@ -13,6 +13,7 @@ if (!page) return Astro.redirect('/dashboard/status-pages');
 
 let error = '';
 let values = { title: page.title, slug: page.slug, description: page.description ?? '' };
+const canHideBranding = Astro.locals.plan!.limits.removeBranding;
 
 if (Astro.request.method === 'POST') {
   const f = await Astro.request.formData();
@@ -38,8 +39,8 @@ if (Astro.request.method === 'POST') {
     const ownedIds = new Set(owned.map((o) => o.id));
     const keep = chosen.filter((m) => ownedIds.has(m));
     await env.DB.batch([
-      env.DB.prepare(`UPDATE status_pages SET title = ?, slug = ?, description = ? WHERE id = ? AND user_id = ?`)
-        .bind(values.title, values.slug, values.description || null, id, user.id),
+      env.DB.prepare(`UPDATE status_pages SET title = ?, slug = ?, description = ?, show_branding = ? WHERE id = ? AND user_id = ?`)
+        .bind(values.title, values.slug, values.description || null, canHideBranding && !f.get('branding') ? 0 : 1, id, user.id),
       env.DB.prepare(`DELETE FROM status_page_monitors WHERE page_id = ?`).bind(id),
       ...keep.map((m, i) => env.DB.prepare(`INSERT INTO status_page_monitors (page_id, monitor_id, position) VALUES (?, ?, ?)`).bind(id, m, i)),
     ]);
@@ -111,6 +112,18 @@ const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-
         </div>
       )}
     </fieldset>
+
+    {canHideBranding ? (
+      <label class="flex cursor-pointer items-start gap-3">
+        <input type="checkbox" name="branding" value="1" checked={page.show_branding !== 0} class="mt-0.5 size-4 accent-[#22c55e]" />
+        <span><span class="block text-sm font-medium text-white">Show “Powered by” footer</span><span class="text-xs text-slate-500">Untick to remove our branding from this page.</span></span>
+      </label>
+    ) : (
+      <p class="flex items-center gap-2 text-xs text-slate-500">
+        <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        Removing the “Powered by” footer is available on <a href="/pricing" class="text-brand hover:text-brand-soft">Business</a>.
+      </p>
+    )}
 
     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-6">
       <div class="flex gap-3">

@@ -45,4 +45,4 @@ When you go live, add the real domain's URLs in each provider as well.
 5. `npm run deploy`
 
 ## Not built yet
-Payments (Pro plan), plan limits, custom domains for status pages, SMS, multi-location confirmation, and languages.
+Payments (they will set `user_plans`, then call `enforcePlan` on downgrade), team members, history retention per plan, custom domains for status pages, SMS, multi-location confirmation, and languages.

@@ -1,9 +1,10 @@
 ---
 import { env } from 'cloudflare:workers';
 import Dashboard from '../../layouts/Dashboard.astro';
-import { FREE_STATUS_PAGE_LIMIT, slugError, slugify, type StatusPageRow } from '../../lib/statusPage';
+import { slugError, slugify, type StatusPageRow } from '../../lib/statusPage';
 
 const user = Astro.locals.user!;
+const { id: planId, limits } = Astro.locals.plan!;
 let error = '';
 let values = { title: '', slug: '' };
 
@@ -16,7 +17,7 @@ if (Astro.request.method === 'POST') {
   if (!values.title) error = 'Give your status page a name, like your company or website name.';
   else if (slugError(values.slug)) error = slugError(values.slug)!;
   else if (taken) error = `The address “${values.slug}” is already taken. Try another.`;
-  else if ((count?.n ?? 0) >= FREE_STATUS_PAGE_LIMIT) error = `The free plan includes ${FREE_STATUS_PAGE_LIMIT} status page. Upgrade to create more.`;
+  else if ((count?.n ?? 0) >= limits.statusPages) error = `The ${limits.name} plan includes ${limits.statusPages} status page${limits.statusPages > 1 ? 's' : ''}. Upgrade to create more.`;
   else {
     const id = crypto.randomUUID();
     await env.DB.prepare(`INSERT INTO status_pages (id, user_id, slug, title, created_at) VALUES (?, ?, ?, ?, ?)`)
@@ -38,7 +39,7 @@ const { results: pages } = await env.DB.prepare(
 
 const host = Astro.url.host;
 const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50';
-const canCreate = pages.length < FREE_STATUS_PAGE_LIMIT;
+const canCreate = pages.length < limits.statusPages;
 ---
 <Dashboard title="Status pages" active="status" subtitle="Public pages that show your customers what’s up, and what’s down.">
   {pages.length > 0 && (
@@ -92,7 +93,7 @@ const canCreate = pages.length < FREE_STATUS_PAGE_LIMIT;
     </form>
   ) : (
     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.02] px-5 py-4">
-      <p class="text-sm text-slate-400">The free plan includes {FREE_STATUS_PAGE_LIMIT} status page. Pro gives you 3, on your own domain.</p>
+      <p class="text-sm text-slate-400">You’ve used all {limits.statusPages} status page{limits.statusPages > 1 ? 's' : ''} on the {limits.name} plan.{planId === 'free' ? ' Pro gives you 3.' : ' Business gives you unlimited pages.'}</p>
       <a href="/pricing" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-brand-soft">See plans</a>
     </div>
   )}

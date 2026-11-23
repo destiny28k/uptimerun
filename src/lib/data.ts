@@ -1,8 +1,8 @@
 // Read helpers for the dashboard. All queries are scoped to the logged-in user.
 import type { Status } from '../data/mock';
 
-export const FREE_MONITOR_LIMIT = 10;
 export const INTERVALS = [
+  { sec: 30, label: '30 sec' },
   { sec: 60, label: '1 min' },
   { sec: 300, label: '5 min' },
   { sec: 900, label: '15 min' },

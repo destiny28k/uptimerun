@@ -1,5 +1,6 @@
 // The every-minute uptime checker. Called from the Worker's scheduled() handler.
 import { sendAlerts, type AlertEvent } from './alerts';
+import { LIMITS, type PlanId } from './plans';
 
 export interface MonitorRow {
   id: string;
@@ -70,8 +71,10 @@ function push(list: string, item: string, sep = '') {
 export async function runChecks(env: Env) {
   const now = Date.now();
   const { results: due } = await env.DB.prepare(
-    `SELECT id, user_id, name, url, type, keyword, interval_sec, timeout_sec, method, follow_redirects, status, fail_count, history, ms_history, status_since
-     FROM monitors WHERE status != 'paused' AND next_check_at <= ? ORDER BY next_check_at LIMIT ?`,
+    `SELECT m.id, m.user_id, m.name, m.url, m.type, m.keyword, m.interval_sec, m.timeout_sec, m.method, m.follow_redirects,
+            m.status, m.fail_count, m.history, m.ms_history, m.status_since, COALESCE(p.plan, 'free') AS plan
+     FROM monitors m LEFT JOIN user_plans p ON p.user_id = m.user_id
+     WHERE m.status != 'paused' AND m.next_check_at <= ? ORDER BY m.next_check_at LIMIT ?`,
   ).bind(now, BATCH).all<MonitorRow>();
   if (!due.length) return;
 
@@ -86,7 +89,9 @@ export async function runChecks(env: Env) {
     let failCount = r.ok ? 0 : m.fail_count + 1;
     let since = m.status_since ?? now;
     // Re-check failures after a minute so outages are confirmed quickly.
-    let next = now + (r.ok ? m.interval_sec * 1000 : Math.min(60_000, m.interval_sec * 1000)) - 10_000;
+    // Never check faster than the user's plan allows (e.g. after a downgrade).
+    const intervalMs = Math.max(m.interval_sec, LIMITS[(m as any).plan as PlanId]?.minIntervalSec ?? 300) * 1000;
+    let next = now + (r.ok ? intervalMs : Math.min(60_000, intervalMs)) - 10_000;
 
     if (r.ok) {
       if (m.status !== 'up') {

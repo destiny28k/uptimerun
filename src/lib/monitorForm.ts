@@ -39,7 +39,7 @@ export function readForm(f: FormData): MonitorValues {
 }
 
 /** Returns a clean monitor, or an error message for the form. */
-export function validate(values: MonitorValues): { data?: CleanMonitor; error?: string } {
+export function validate(values: MonitorValues, minIntervalSec = 0): { data?: CleanMonitor; error?: string } {
   let url = values.url;
   if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
   let parsed: URL | null = null;
@@ -50,6 +50,7 @@ export function validate(values: MonitorValues): { data?: CleanMonitor; error?: 
   if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.')) return { error: 'Please enter a valid website address, like https://yourwebsite.com' };
   if (values.type === 'keyword' && !values.keyword) return { error: 'Enter the keyword we should look for on the page.' };
   if (!INTERVALS.some((i) => i.sec === interval)) return { error: 'Please choose a check interval.' };
+  if (interval < minIntervalSec) return { error: 'That check interval needs a higher plan. Choose a slower one, or upgrade.' };
   if (!TIMEOUTS.includes(timeout)) return { error: 'Please choose a request timeout.' };
 
   const isKeyword = values.type === 'keyword';

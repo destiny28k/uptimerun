@@ -1,15 +1,23 @@
 ---
 import { env } from 'cloudflare:workers';
 import Dashboard from '../../layouts/Dashboard.astro';
-import { countMonitors, FREE_MONITOR_LIMIT } from '../../lib/data';
+import { countMonitors, intervalLabel } from '../../lib/data';
+import { PLANS } from '../../data/plans';
 
 const user = Astro.locals.user!;
-const used = await countMonitors(env.DB, user.id);
-const channels = await env.DB.prepare(`SELECT COUNT(*) AS n FROM alert_channels WHERE user_id = ?`).bind(user.id).first<{ n: number }>();
+const { id: planId, limits } = Astro.locals.plan!;
+const [used, channels, pages] = await Promise.all([
+  countMonitors(env.DB, user.id),
+  env.DB.prepare(`SELECT COUNT(*) AS n FROM alert_channels WHERE user_id = ?`).bind(user.id).first<{ n: number }>(),
+  env.DB.prepare(`SELECT COUNT(*) AS n FROM status_pages WHERE user_id = ?`).bind(user.id).first<{ n: number }>(),
+]);
 const usage = [
-  { label: 'Monitors', used, max: FREE_MONITOR_LIMIT },
+  { label: 'Monitors', used, max: limits.monitors },
+  { label: 'Status pages', used: pages?.n ?? 0, max: limits.statusPages },
   { label: 'Alert contacts', used: channels?.n ?? 0, max: 10 },
 ];
+const current = PLANS.find((p) => p.id === planId)!;
+const next = planId === 'free' ? PLANS[1] : planId === 'pro' ? PLANS[2] : null;
 ---
 <Dashboard title="Settings & billing" active="settings">
   <div class="grid gap-6 lg:grid-cols-[1fr_22rem]">
@@ -27,10 +35,11 @@ const usage = [
         <h2 class="font-semibold text-white">Usage</h2>
         <div class="mt-5 space-y-5">
           {usage.map((u) => {
-            const pct = Math.min(100, Math.round((u.used / u.max) * 100));
+            const unlimited = u.max >= 1000;
+            const pct = unlimited ? 5 : Math.min(100, Math.round((u.used / u.max) * 100));
             return (
               <div>
-                <div class="flex justify-between text-sm"><span class="text-slate-300">{u.label}</span><span class="tabular-nums text-slate-400">{u.used} / {u.max}</span></div>
+                <div class="flex justify-between text-sm"><span class="text-slate-300">{u.label}</span><span class="tabular-nums text-slate-400">{u.used} / {unlimited ? 'Unlimited' : u.max}</span></div>
                 <div class="mt-2 h-1.5 rounded-full bg-white/5"><div class:list={['h-full rounded-full', pct >= 100 ? 'bg-amber-400' : 'bg-brand']} style={`width:${pct}%`}></div></div>
               </div>
             );
@@ -41,14 +50,21 @@ const usage = [
 
     <aside class="h-fit rounded-xl border border-brand/40 bg-gradient-to-b from-brand/[0.08] to-transparent p-6">
       <p class="text-xs font-semibold uppercase tracking-wider text-brand">Current plan</p>
-      <p class="mt-2 text-2xl font-semibold text-white">Free</p>
-      <p class="mt-1 text-sm text-slate-400">{FREE_MONITOR_LIMIT} monitors · email and Telegram alerts</p>
-      <div class="mt-6 rounded-lg border border-white/10 bg-ink-950/60 p-4">
-        <p class="font-medium text-white">Pro is coming soon</p>
-        <p class="mt-1 text-sm text-slate-400">50 monitors, 1-minute checks, custom domain status page.</p>
-        <p class="mt-4"><span class="text-3xl font-semibold text-white">$10</span><span class="text-sm text-slate-500"> / month</span></p>
-        <button disabled class="mt-4 w-full cursor-not-allowed rounded-lg bg-brand/40 py-2.5 text-sm font-semibold text-ink-950">Upgrade (soon)</button>
-      </div>
+      <p class="mt-2 text-2xl font-semibold text-white">{limits.name}</p>
+      <p class="mt-1 text-sm text-slate-400">{limits.monitors} monitors · checks every {intervalLabel(limits.minIntervalSec)}</p>
+      <ul class="mt-4 space-y-1.5 text-sm text-slate-300">
+        {current.highlights.slice(2, 5).map((h) => <li class="flex gap-2"><span class="text-brand">✓</span>{h}</li>)}
+      </ul>
+      {next && (
+        <div class="mt-6 rounded-lg border border-white/10 bg-ink-950/60 p-4">
+          <p class="font-medium text-white">Upgrade to {next.name}</p>
+          <p class="mt-1 text-sm text-slate-400">{next.highlights.slice(0, 3).join(' · ')}</p>
+          <p class="mt-4"><span class="text-3xl font-semibold text-white">${next.monthly}</span><span class="text-sm text-slate-500"> / month</span></p>
+          <p class="text-xs text-slate-500">or ${next.yearly} / year</p>
+          <a href="/pricing" class="mt-4 block w-full rounded-lg bg-brand py-2.5 text-center text-sm font-semibold text-ink-950 hover:bg-brand-soft">See plans</a>
+          <p class="mt-2 text-center text-xs text-slate-500">Online payment is coming soon.</p>
+        </div>
+      )}
     </aside>
   </div>
 </Dashboard>
