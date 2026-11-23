@@ -45,92 +45,124 @@ if (Astro.request.method === 'POST') {
 }
 
 const { results: channels } = await env.DB.prepare(`SELECT * FROM alert_channels WHERE user_id = ? ORDER BY created_at`).bind(user.id).all<Channel>();
-const meta: Record<ChannelType, { name: string; color: string; short: string }> = {
-  email: { name: 'Email', color: 'bg-slate-500/15 text-slate-300', short: '@' },
-  telegram: { name: 'Telegram', color: 'bg-sky-500/15 text-sky-400', short: 'TG' },
-  discord: { name: 'Discord', color: 'bg-indigo-500/15 text-indigo-400', short: 'DC' },
-  slack: { name: 'Slack', color: 'bg-fuchsia-500/15 text-fuchsia-400', short: 'SL' },
+const ICONS: Record<ChannelType, string> = {
+  email: 'M4 6h16v12H4zM4 7l8 6 8-6',
+  telegram: 'M21 4 3 11l6 2 2 6 3-4 5 4 2-15ZM9 13l9-7',
+  discord: 'M8 17c-3 0-5-1.5-5-1.5S4 8 6 6c1.5-1 3-1.2 3-1.2l.6 1.2h4.8l.6-1.2s1.5.2 3 1.2c2 2 3 9.5 3 9.5S19 17 16 17l-1-1.6M9 12.5h.01M15 12.5h.01',
+  slack: 'M14 3v7M10 14v7M3 10h7M14 14h7M10 3a2 2 0 1 0 0 4h0V3ZM21 10a2 2 0 1 0-4 0v0h4ZM14 21a2 2 0 1 0 0-4h0v4ZM3 14a2 2 0 1 0 4 0v0H3Z',
 };
+const meta: Record<ChannelType, { name: string; color: string; blurb: string }> = {
+  email: { name: 'Email', color: 'bg-emerald-500/15 text-emerald-300', blurb: 'Any inbox, like a team address' },
+  telegram: { name: 'Telegram', color: 'bg-sky-500/15 text-sky-400', blurb: 'Instant push on your phone' },
+  discord: { name: 'Discord', color: 'bg-indigo-500/15 text-indigo-400', blurb: 'Post to a server channel' },
+  slack: { name: 'Slack', color: 'bg-fuchsia-500/15 text-fuchsia-400', blurb: 'Post to a workspace channel' },
+};
+const types = Object.keys(meta) as ChannelType[];
 // Webhook URLs are secrets; only show the end of them.
-const shown = (c: Channel) => (c.type === 'discord' || c.type === 'slack') ? `…${c.target.slice(-10)}` : c.target;
+const shown = (c: Channel) => (c.type === 'discord' || c.type === 'slack') ? `Webhook …${c.target.slice(-8)}` : c.target;
+const activeCount = channels.filter((c) => c.enabled).length;
 const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50';
 const small = 'rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10';
+const guides: Record<ChannelType, { steps: string[]; field: { type: string; placeholder: string; mode?: string } }> = {
+  email: { steps: ['Enter any email address, like your team’s shared inbox.', 'Click Add, then send a test alert.'], field: { type: 'email', placeholder: 'alerts@yourcompany.com' } },
+  telegram: { steps: ['Open our bot in Telegram and press Start.', 'Message @userinfobot to get your chat ID.', 'Paste the number below.'], field: { type: 'text', placeholder: 'Chat ID, e.g. 123456789', mode: 'numeric' } },
+  discord: { steps: ['Open the channel’s settings → Integrations → Webhooks.', 'Click New Webhook, then Copy Webhook URL.', 'Paste the URL below.'], field: { type: 'url', placeholder: 'https://discord.com/api/webhooks/…' } },
+  slack: { steps: ['In Slack, add the Incoming Webhooks app to your channel.', 'Copy the webhook URL it gives you.', 'Paste the URL below.'], field: { type: 'url', placeholder: 'https://hooks.slack.com/services/…' } },
+};
 ---
 <Dashboard title="Alert contacts" active="alerts" subtitle="Where we tell you when something goes down, and when it’s back.">
   {error && <p class="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
   {notice && <p class="mb-6 rounded-lg border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-brand">{notice}</p>}
 
-  {channels.length === 0 && (
-    <p class="mb-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
-      No contacts yet, so alerts go to your account email <span class="text-white">{user.email}</span>.
-    </p>
-  )}
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+    <!-- Your contacts -->
+    <section>
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-white">Your contacts<span class="text-brand">.</span></h2>
+        <span class="text-xs text-slate-500">{channels.length ? `${activeCount} of ${channels.length} active` : 'Using account email'}</span>
+      </div>
+      <ul class="mt-3 space-y-2.5">
+        {channels.length === 0 && (
+          <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-ink-900/50 px-4 py-3.5">
+            <span class:list={['grid size-10 shrink-0 place-items-center rounded-lg', meta.email.color]}>
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.email} /></svg>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="flex items-center gap-2 text-sm font-medium text-white">Account email <span class="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Default</span></p>
+              <p class="truncate text-xs text-slate-500">{user.email}</p>
+            </div>
+            <span class="hidden sm:inline text-xs text-slate-500">Used until you add a contact</span>
+          </li>
+        )}
+        {channels.map((c) => (
+          <li class:list={['flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-ink-900/50 px-4 py-3.5', !c.enabled && 'opacity-60']}>
+            <span class:list={['grid size-10 shrink-0 place-items-center rounded-lg', meta[c.type].color]}>
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS[c.type]} /></svg>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="flex items-center gap-2 text-sm font-medium text-white">
+                {meta[c.type].name}
+                <span class:list={['inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide', c.enabled ? 'bg-brand/10 text-brand' : 'bg-white/5 text-slate-400']}>
+                  <span class:list={['size-1.5 rounded-full', c.enabled ? 'bg-brand' : 'bg-slate-500']}></span>{c.enabled ? 'Active' : 'Paused'}
+                </span>
+              </p>
+              <p class="truncate text-xs text-slate-500">{shown(c)}</p>
+            </div>
+            <form method="post" class="flex gap-2">
+              <input type="hidden" name="id" value={c.id} />
+              <button name="action" value="test" class={small}>Send test</button>
+              <button name="action" value="toggle" class={small}>{c.enabled ? 'Pause' : 'Resume'}</button>
+              <button name="action" value="delete" aria-label="Remove" title="Remove" class="grid size-8 place-items-center rounded-lg border border-red-500/30 text-red-300 hover:bg-red-500/10">
+                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
+      <div class="mt-4 flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-xs text-slate-400">
+        <svg viewBox="0 0 24 24" class="mt-px size-4 shrink-0 text-brand" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 16v-4M12 8h.01" /></svg>
+        <p>Every active contact gets an alert when a monitor goes down and when it’s back up. All channels are free on every plan.</p>
+      </div>
+    </section>
 
-  <div class="grid gap-4 md:grid-cols-2">
-    {channels.map((c) => (
-      <div class:list={['flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-ink-900/50 p-5', !c.enabled && 'opacity-60']}>
-        <span class:list={['grid size-11 shrink-0 place-items-center rounded-lg text-xs font-bold', meta[c.type].color]}>{meta[c.type].short}</span>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-white">{meta[c.type].name} {!c.enabled && <span class="text-xs text-slate-500">(off)</span>}</p>
-          <p class="truncate text-xs text-slate-500">{shown(c)}</p>
-        </div>
-        <form method="post" class="flex gap-2">
-          <input type="hidden" name="id" value={c.id} />
-          <button name="action" value="test" class={small}>Test</button>
-          <button name="action" value="toggle" class={small}>{c.enabled ? 'Turn off' : 'Turn on'}</button>
-          <button name="action" value="delete" class="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/10">Remove</button>
+    <!-- Add a contact -->
+    <section class="rounded-xl border border-white/10 bg-ink-900/50 p-5 xl:self-start">
+      <h2 class="text-sm font-semibold text-white">Add a contact<span class="text-brand">.</span></h2>
+      <div class="mt-4 grid grid-cols-4 gap-2" role="tablist">
+        {types.map((t, i) => (
+          <button type="button" role="tab" data-tab={t} aria-selected={i === 0 ? 'true' : 'false'}
+            class="channel-tab flex flex-col items-center gap-1.5 rounded-lg border border-white/10 py-3 text-xs text-slate-400 transition-colors hover:text-white aria-selected:border-brand/50 aria-selected:bg-brand/[0.06] aria-selected:text-white">
+            <span class:list={['grid size-8 place-items-center rounded-md', meta[t].color]}>
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS[t]} /></svg>
+            </span>
+            {meta[t].name}
+          </button>
+        ))}
+      </div>
+      {types.map((t, i) => (
+        <form method="post" data-panel={t} class:list={['mt-5', i > 0 && 'hidden']}>
+          <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value={t} />
+          <p class="text-sm font-medium text-white">{meta[t].name} <span class="font-normal text-slate-500">· {meta[t].blurb}</span></p>
+          <ol class="mt-3 space-y-2">
+            {guides[t].steps.map((s, n) => (
+              <li class="flex gap-3 text-sm text-slate-400">
+                <span class="grid size-5 shrink-0 place-items-center rounded-full bg-white/5 text-[11px] font-semibold text-slate-300">{n + 1}</span>{s}
+              </li>
+            ))}
+          </ol>
+          <input name="target" type={guides[t].field.type} inputmode={guides[t].field.mode as any} required class:list={[input, 'mt-4']} placeholder={guides[t].field.placeholder} />
+          <button class="mt-3 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add {meta[t].name}</button>
         </form>
-      </div>
-    ))}
+      ))}
+    </section>
   </div>
-
-  <div class="mt-8 grid gap-6 lg:grid-cols-2">
-    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
-      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="email" />
-      <h2 class="font-semibold text-white">Add email</h2>
-      <p class="mt-1 text-sm text-slate-400">Send alerts to any inbox, like your team’s shared address.</p>
-      <div class="mt-4 flex gap-2">
-        <input name="target" type="email" required class={input} placeholder="alerts@yourcompany.com" />
-        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
-      </div>
-    </form>
-
-    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
-      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="telegram" />
-      <h2 class="font-semibold text-white">Add Telegram</h2>
-      <ol class="mt-1 list-decimal space-y-0.5 pl-5 text-sm text-slate-400">
-        <li>Open our bot in Telegram and press <span class="text-white">Start</span>.</li>
-        <li>Get your chat ID from <span class="text-white">@userinfobot</span>.</li>
-        <li>Paste it below.</li>
-      </ol>
-      <div class="mt-4 flex gap-2">
-        <input name="target" required inputmode="numeric" class={input} placeholder="Chat ID, e.g. 123456789" />
-        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
-      </div>
-    </form>
-  </div>
-
-  <div class="mt-6 grid gap-6 lg:grid-cols-2">
-    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
-      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="discord" />
-      <h2 class="font-semibold text-white">Add Discord</h2>
-      <p class="mt-1 text-sm text-slate-400">Channel settings → Integrations → Webhooks → New webhook → Copy URL.</p>
-      <div class="mt-4 flex gap-2">
-        <input name="target" type="url" required class={input} placeholder="https://discord.com/api/webhooks/…" />
-        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
-      </div>
-    </form>
-
-    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
-      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="slack" />
-      <h2 class="font-semibold text-white">Add Slack</h2>
-      <p class="mt-1 text-sm text-slate-400">Create an Incoming Webhook for your channel in Slack, then paste its URL.</p>
-      <div class="mt-4 flex gap-2">
-        <input name="target" type="url" required class={input} placeholder="https://hooks.slack.com/services/…" />
-        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
-      </div>
-    </form>
-  </div>
-
-  <p class="mt-6 text-xs text-slate-500">All alert channels are free on every plan. SMS and webhooks are coming soon.</p>
 </Dashboard>
+
+<script>
+  // Switch between channel forms.
+  const tabs = document.querySelectorAll<HTMLButtonElement>('.channel-tab');
+  tabs.forEach((tab) => tab.addEventListener('click', () => {
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== tab.dataset.tab));
+  }));
+</script>
