@@ -33,5 +33,12 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
   if (/^\/(dashboard|api|login|signup)(\/|$)/.test(path) || !/(^|\.)uptimerun\.com$|^localhost$/.test(ctx.url.hostname)) {
     res.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
+  // Basic security headers on every response.
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Public status pages (/s/...) may be embedded; everything else can't be framed (clickjacking).
+  if (!path.startsWith('/s/')) res.headers.set('X-Frame-Options', 'DENY');
   return res;
 });

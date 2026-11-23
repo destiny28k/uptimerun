@@ -2,6 +2,7 @@
 // Landing spot after signup: creates the monitor for the website they typed, then opens it.
 import { env } from 'cloudflare:workers';
 import { countMonitors } from '../../lib/data';
+import { isPrivateHost } from '../../lib/monitorForm';
 
 const user = Astro.locals.user!;
 let raw = (Astro.url.searchParams.get('url') ?? '').trim();
@@ -9,7 +10,7 @@ if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
 
 let parsed: URL | null = null;
 try { parsed = new URL(raw); } catch {}
-if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.')) return Astro.redirect('/dashboard');
+if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.') || isPrivateHost(parsed.hostname)) return Astro.redirect('/dashboard');
 
 const url = parsed.toString();
 // Don't duplicate if they click the link twice, and respect the free limit.

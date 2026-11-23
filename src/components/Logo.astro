@@ -1,7 +1,8 @@
 ---
 import { SITE } from '../site';
+const { href = '/' } = Astro.props;
 ---
-<a href="/" class="flex items-center gap-2 text-white font-semibold tracking-tight">
+<a href={href} class="flex items-center gap-2 text-white font-semibold tracking-tight">
   <span class="grid place-items-center size-8 rounded-lg bg-brand/15 ring-1 ring-brand/30">
     <svg viewBox="0 0 24 24" class="size-5 text-brand" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg>
   </span>

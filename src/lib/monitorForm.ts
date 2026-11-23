@@ -39,6 +39,16 @@ export function readForm(f: FormData): MonitorValues {
 }
 
 /** Returns a clean monitor, or an error message for the form. */
+// Block private/internal addresses so the checker can't be pointed at internal networks.
+export function isPrivateHost(host: string): boolean {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || /\.(localhost|local|internal|lan|home|corp)$/.test(h) || h.includes(':')) return true;
+  const m = h.match(/^(\d+)\.(\d+)\.\d+\.\d+$/);
+  if (!m) return false;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+}
+
 export function validate(values: MonitorValues, minIntervalSec = 0): { data?: CleanMonitor; error?: string } {
   let url = values.url;
   if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
@@ -48,6 +58,7 @@ export function validate(values: MonitorValues, minIntervalSec = 0): { data?: Cl
   const interval = Number(values.interval);
   const timeout = Number(values.timeout);
   if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.')) return { error: 'Please enter a valid website address, like https://yourwebsite.com' };
+  if (isPrivateHost(parsed.hostname)) return { error: 'Private and internal addresses can’t be monitored. Please use a public website address.' };
   if (values.type === 'keyword' && !values.keyword) return { error: 'Enter the keyword we should look for on the page.' };
   if (!INTERVALS.some((i) => i.sec === interval)) return { error: 'Please choose a check interval.' };
   if (interval < minIntervalSec) return { error: 'That check interval needs a higher plan. Choose a slower one, or upgrade.' };
