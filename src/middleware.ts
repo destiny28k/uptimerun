@@ -7,6 +7,12 @@ const PROTECTED = /^\/dashboard(\/|$)/;
 const GUEST_ONLY = /^\/(login|signup)\/?$/;
 
 export const onRequest = defineMiddleware(async (ctx, next) => {
+  // One canonical address: https://uptimerun.com (www and plain http redirect there).
+  const { hostname, protocol } = ctx.url;
+  if (hostname === 'www.uptimerun.com' || (hostname === 'uptimerun.com' && protocol === 'http:')) {
+    return Response.redirect(`https://uptimerun.com${ctx.url.pathname}${ctx.url.search}`, 301);
+  }
+
   ctx.locals.user = null;
   ctx.locals.plan = null;
   const path = ctx.url.pathname;
