@@ -1,0 +1,9 @@
+---
+import type { Status } from '../../data/mock';
+const { history, height = 'h-6' } = Astro.props as { history: Status[]; height?: string };
+---
+<div class:list={['flex items-stretch gap-[2px]', height]}>
+  {history.map((s) => (
+    <span class:list={['flex-1 rounded-[2px]', s === 'up' ? 'bg-brand/70' : s === 'down' ? 'bg-red-500/85' : 'bg-white/[0.06]']}></span>
+  ))}
+</div>

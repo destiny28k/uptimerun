@@ -1,0 +1,136 @@
+---
+import { env } from 'cloudflare:workers';
+import Dashboard from '../../layouts/Dashboard.astro';
+import { sendEmail, sendTelegram, sendWebhook, WEBHOOK_PATTERNS, type ChannelType } from '../../lib/alerts';
+
+const user = Astro.locals.user!;
+let error = '';
+let notice = '';
+
+interface Channel { id: string; type: ChannelType; target: string; enabled: number }
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const action = String(f.get('action'));
+  const id = String(f.get('id') ?? '');
+
+  if (action === 'add') {
+    const type = String(f.get('type'));
+    const target = String(f.get('target') ?? '').trim();
+    const count = await env.DB.prepare(`SELECT COUNT(*) AS n FROM alert_channels WHERE user_id = ?`).bind(user.id).first<{ n: number }>();
+    if (type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) error = 'Please enter a valid email address.';
+    else if (type === 'telegram' && !/^-?\d{5,20}$/.test(target)) error = 'Telegram chat ID should be a number, like 123456789.';
+    else if (type === 'discord' && !WEBHOOK_PATTERNS.discord.test(target)) error = 'Paste a Discord webhook URL, like https://discord.com/api/webhooks/…';
+    else if (type === 'slack' && !WEBHOOK_PATTERNS.slack.test(target)) error = 'Paste a Slack webhook URL, like https://hooks.slack.com/services/…';
+    else if (!['email', 'telegram', 'discord', 'slack'].includes(type)) error = 'Unknown channel type.';
+    else if ((count?.n ?? 0) >= 10) error = 'You can add up to 10 alert contacts.';
+    else {
+      await env.DB.prepare(`INSERT INTO alert_channels (id, user_id, type, target, created_at) VALUES (?, ?, ?, ?, ?)`)
+        .bind(crypto.randomUUID(), user.id, type, target, Date.now()).run();
+      return Astro.redirect('/dashboard/alerts', 303);
+    }
+  } else if (action === 'delete') {
+    await env.DB.prepare(`DELETE FROM alert_channels WHERE id = ? AND user_id = ?`).bind(id, user.id).run();
+    return Astro.redirect('/dashboard/alerts', 303);
+  } else if (action === 'toggle') {
+    await env.DB.prepare(`UPDATE alert_channels SET enabled = 1 - enabled WHERE id = ? AND user_id = ?`).bind(id, user.id).run();
+    return Astro.redirect('/dashboard/alerts', 303);
+  } else if (action === 'test') {
+    const c = await env.DB.prepare(`SELECT * FROM alert_channels WHERE id = ? AND user_id = ?`).bind(id, user.id).first<Channel>();
+    if (c?.type === 'email') await sendEmail(env, c.target, '✅ Test alert', 'Your alerts are working. You will get messages like this when a monitor goes down or comes back up.');
+    if (c?.type === 'telegram') await sendTelegram(env, c.target, '✅ <b>Test alert</b>\nYour alerts are working.');
+    if (c?.type === 'discord' || c?.type === 'slack') await sendWebhook(env, c.type, c.target, '✅ Test alert from Upbeat. Your alerts are working.');
+    notice = c ? 'Test alert sent. Check that it arrived.' : '';
+  }
+}
+
+const { results: channels } = await env.DB.prepare(`SELECT * FROM alert_channels WHERE user_id = ? ORDER BY created_at`).bind(user.id).all<Channel>();
+const meta: Record<ChannelType, { name: string; color: string; short: string }> = {
+  email: { name: 'Email', color: 'bg-slate-500/15 text-slate-300', short: '@' },
+  telegram: { name: 'Telegram', color: 'bg-sky-500/15 text-sky-400', short: 'TG' },
+  discord: { name: 'Discord', color: 'bg-indigo-500/15 text-indigo-400', short: 'DC' },
+  slack: { name: 'Slack', color: 'bg-fuchsia-500/15 text-fuchsia-400', short: 'SL' },
+};
+// Webhook URLs are secrets; only show the end of them.
+const shown = (c: Channel) => (c.type === 'discord' || c.type === 'slack') ? `…${c.target.slice(-10)}` : c.target;
+const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50';
+const small = 'rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10';
+---
+<Dashboard title="Alert contacts" active="alerts" subtitle="Where we tell you when something goes down, and when it’s back.">
+  {error && <p class="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+  {notice && <p class="mb-6 rounded-lg border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-brand">{notice}</p>}
+
+  {channels.length === 0 && (
+    <p class="mb-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
+      No contacts yet, so alerts go to your account email <span class="text-white">{user.email}</span>.
+    </p>
+  )}
+
+  <div class="grid gap-4 md:grid-cols-2">
+    {channels.map((c) => (
+      <div class:list={['flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-ink-900/50 p-5', !c.enabled && 'opacity-60']}>
+        <span class:list={['grid size-11 shrink-0 place-items-center rounded-lg text-xs font-bold', meta[c.type].color]}>{meta[c.type].short}</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-white">{meta[c.type].name} {!c.enabled && <span class="text-xs text-slate-500">(off)</span>}</p>
+          <p class="truncate text-xs text-slate-500">{shown(c)}</p>
+        </div>
+        <form method="post" class="flex gap-2">
+          <input type="hidden" name="id" value={c.id} />
+          <button name="action" value="test" class={small}>Test</button>
+          <button name="action" value="toggle" class={small}>{c.enabled ? 'Turn off' : 'Turn on'}</button>
+          <button name="action" value="delete" class="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/10">Remove</button>
+        </form>
+      </div>
+    ))}
+  </div>
+
+  <div class="mt-8 grid gap-6 lg:grid-cols-2">
+    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
+      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="email" />
+      <h2 class="font-semibold text-white">Add email</h2>
+      <p class="mt-1 text-sm text-slate-400">Send alerts to any inbox, like your team’s shared address.</p>
+      <div class="mt-4 flex gap-2">
+        <input name="target" type="email" required class={input} placeholder="alerts@yourcompany.com" />
+        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
+      </div>
+    </form>
+
+    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
+      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="telegram" />
+      <h2 class="font-semibold text-white">Add Telegram</h2>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5 text-sm text-slate-400">
+        <li>Open our bot in Telegram and press <span class="text-white">Start</span>.</li>
+        <li>Get your chat ID from <span class="text-white">@userinfobot</span>.</li>
+        <li>Paste it below.</li>
+      </ol>
+      <div class="mt-4 flex gap-2">
+        <input name="target" required inputmode="numeric" class={input} placeholder="Chat ID, e.g. 123456789" />
+        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
+      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="discord" />
+      <h2 class="font-semibold text-white">Add Discord</h2>
+      <p class="mt-1 text-sm text-slate-400">Channel settings → Integrations → Webhooks → New webhook → Copy URL.</p>
+      <div class="mt-4 flex gap-2">
+        <input name="target" type="url" required class={input} placeholder="https://discord.com/api/webhooks/…" />
+        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
+      </div>
+    </form>
+
+    <form method="post" class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
+      <input type="hidden" name="action" value="add" /><input type="hidden" name="type" value="slack" />
+      <h2 class="font-semibold text-white">Add Slack</h2>
+      <p class="mt-1 text-sm text-slate-400">Create an Incoming Webhook for your channel in Slack, then paste its URL.</p>
+      <div class="mt-4 flex gap-2">
+        <input name="target" type="url" required class={input} placeholder="https://hooks.slack.com/services/…" />
+        <button class="shrink-0 rounded-lg bg-brand px-4 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <p class="mt-6 text-xs text-slate-500">All alert channels are free on every plan. SMS and webhooks are coming soon.</p>
+</Dashboard>

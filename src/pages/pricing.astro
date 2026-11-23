@@ -1,0 +1,115 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Pricing from '../components/Pricing.astro';
+import Footer from '../components/Footer.astro';
+import { PLANS, FEATURES, YEARLY_SAVING } from '../data/plans';
+import { SITE } from '../site';
+
+const faqs = [
+  ['Can I really use the free plan for my business?', 'Yes. Commercial use is allowed on every plan, including Free. No credit card needed.'],
+  ['How does the 14-day free trial work?', 'You get every Pro or Business feature for 14 days. If you don’t upgrade, your account simply moves to the Free plan. Nothing is charged automatically.'],
+  ['What happens to my monitors if I downgrade?', 'Your monitors and history stay. If you have more than the Free plan allows, the extra monitors are paused until you upgrade again or remove some.'],
+  ['Can I switch between monthly and yearly?', `Yes, any time from Settings & billing. Yearly billing saves you ${YEARLY_SAVING}%.`],
+  ['Which payment methods do you accept?', 'All major cards and PayPal. Prices are in USD, and local taxes are added at checkout where required.'],
+  ['Do you offer refunds?', 'Yes. If you’re not happy, contact us within 14 days of a payment for a full refund.'],
+];
+---
+<Base title={`Pricing · ${SITE.name}`}>
+  <Navbar />
+  <main>
+    <section class="relative overflow-hidden">
+      <div class="grid-bg absolute inset-0 pointer-events-none"></div>
+      <div class="glow absolute inset-0 pointer-events-none"></div>
+      <div class="relative mx-auto max-w-3xl px-4 sm:px-6 pt-16 sm:pt-24 text-center">
+        <p class="text-sm font-semibold text-brand">Pricing</p>
+        <h1 class="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-white text-balance">Fair pricing for every website</h1>
+        <p class="mx-auto mt-5 max-w-xl text-base sm:text-lg text-slate-400">Start free with 10 monitors. Upgrade for faster checks, more monitors and expiry alerts. All alert channels are included on every plan.</p>
+      </div>
+    </section>
+
+    <div class="[&>section]:border-t-0 [&>section]:pt-0">
+      <Pricing heading={false} compareLink={false} />
+    </div>
+
+    <!-- Feature comparison -->
+    <section id="compare" class="border-t border-white/5 py-24">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-white">Compare plans</h2>
+          <p class="mt-4 text-slate-400">Everything included in each plan, side by side.</p>
+        </div>
+
+        <div class="mt-12 overflow-x-auto rounded-2xl border border-white/10">
+          <table class="w-full min-w-[640px] text-sm">
+            <thead class="bg-ink-900/95">
+              <tr class="border-b border-white/10">
+                <th class="w-2/5 px-5 py-4 text-left font-medium text-slate-400">Features</th>
+                {PLANS.map((p) => (
+                  <th class="px-4 py-4 text-center">
+                    <span class:list={['block font-semibold', p.featured ? 'text-brand' : 'text-white']}>{p.name}</span>
+                    <span class="block text-xs font-normal text-slate-500">{p.monthly ? `from $${(p.yearly / 12).toFixed(0)}/mo` : 'Free forever'}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            {FEATURES.map((g) => (
+              <tbody class="divide-y divide-white/5">
+                <tr class="bg-white/[0.02]"><th colspan="4" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">{g.title}</th></tr>
+                {g.rows.map((r) => (
+                  <tr class="hover:bg-white/[0.015]">
+                    <td class="px-5 py-3.5">
+                      <span class="text-slate-200">{r.label}</span>
+                      {r.hint && <span class="block text-xs text-slate-500">{r.hint}</span>}
+                    </td>
+                    {r.values.map((v, i) => (
+                      <td class:list={['px-4 py-3.5 text-center', PLANS[i].featured && 'bg-brand/[0.04]']}>
+                        {v === true ? (
+                          <svg viewBox="0 0 24 24" class="mx-auto size-5 text-brand" aria-label="Included" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        ) : v === false ? (
+                          <span class="text-slate-600" aria-label="Not included">—</span>
+                        ) : (
+                          <span class:list={[v === 'Soon' ? 'rounded-full bg-white/5 px-2 py-0.5 text-xs text-slate-400' : 'font-medium text-slate-200']}>{v}</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+            <tfoot>
+              <tr class="border-t border-white/10">
+                <td class="px-5 py-5"></td>
+                {PLANS.map((p) => (
+                  <td class="px-4 py-5 text-center">
+                    <a href="/signup" class:list={[
+                      'inline-flex rounded-lg px-4 py-2 text-xs font-semibold transition-colors',
+                      p.featured ? 'bg-brand text-ink-950 hover:bg-brand-soft' : 'border border-white/10 bg-white/5 text-white hover:bg-white/10',
+                    ]}>{p.monthly ? 'Start free trial' : 'Start free'}</a>
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-white/5 py-24">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6">
+        <h2 class="text-center text-3xl sm:text-4xl font-semibold tracking-tight text-white">Billing questions</h2>
+        <div class="mt-12 divide-y divide-white/5 rounded-2xl border border-white/10">
+          {faqs.map(([q, a], i) => (
+            <details class="reveal group px-6 py-5" style={`--d:${i * 70}ms`}>
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-white">
+                {q}<span class="text-xl leading-none text-slate-500 transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p class="mt-3 text-sm leading-relaxed text-slate-400">{a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Base>

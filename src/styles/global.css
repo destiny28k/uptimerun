@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-ink-950: #05080f;
+  --color-ink-900: #0a0f1c;
+  --color-ink-800: #111827;
+  --color-ink-700: #1c2536;
+  --color-line: #1f2a3d;
+  --color-brand: #22c55e;
+  --color-brand-soft: #4ade80;
+}
+
+html { background: var(--color-ink-950); color-scheme: dark; }
+
+/* Tailwind v4 no longer gives buttons a pointer cursor, so add it back everywhere. */
+@layer base {
+  button:not(:disabled), [role="button"], [role="radio"], summary, select,
+  input[type="checkbox"], input[type="radio"], label:has(input[type="checkbox"], input[type="radio"]) {
+    cursor: pointer;
+  }
+  button:disabled { cursor: not-allowed; }
+}
+body { @apply bg-ink-950 text-slate-300 font-sans antialiased; }
+
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+.glow {
+  background: radial-gradient(600px 300px at 50% 0%, rgb(34 197 94 / 0.18), transparent 70%);
+}
+
+@keyframes ping-soft { 0% { transform: scale(1); opacity: .7 } 100% { transform: scale(2.4); opacity: 0 } }
+.pulse-dot::after {
+  content: ""; position: absolute; inset: 0; border-radius: 9999px;
+  background: currentColor; animation: ping-soft 1.6s ease-out infinite;
+}
+
+@keyframes toast-in { 0%, 20% { opacity: 0; transform: translateY(12px) } 30%, 85% { opacity: 1; transform: none } 100% { opacity: 0 } }
+.toast { animation: toast-in 6s ease-in-out infinite; }
+
+/* Scroll reveal: cards fade and rise into place, staggered by --d */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px) scale(0.98);
+  filter: blur(4px);
+  transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1), filter .7s ease;
+  transition-delay: var(--d, 0ms);
+}
+.reveal.in { opacity: 1; transform: none; filter: none; }
+
+/* Card hover lift with soft green edge */
+.lift { transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease; }
+.lift:hover { transform: translateY(-4px); border-color: rgb(34 197 94 / .35); box-shadow: 0 20px 40px -20px rgb(34 197 94 / .25); }
+
+/* Hero dashboard: tilted back, flattens as you scroll */
+.tilt { transform: rotateX(var(--tilt, 18deg)) scale(var(--tilt-s, .94)); transform-origin: center top; will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot::after, .toast { animation: none; }
+  .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+  .tilt { transform: none; }
+  .lift:hover { transform: none; }
+}

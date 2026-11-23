@@ -1,0 +1,27 @@
+---
+// Landing spot after signup: creates the monitor for the website they typed, then opens it.
+import { env } from 'cloudflare:workers';
+import { countMonitors, FREE_MONITOR_LIMIT } from '../../lib/data';
+
+const user = Astro.locals.user!;
+let raw = (Astro.url.searchParams.get('url') ?? '').trim();
+if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+
+let parsed: URL | null = null;
+try { parsed = new URL(raw); } catch {}
+if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.')) return Astro.redirect('/dashboard');
+
+const url = parsed.toString();
+// Don't duplicate if they click the link twice, and respect the free limit.
+const existing = await env.DB.prepare(`SELECT id FROM monitors WHERE user_id = ? AND url = ?`).bind(user.id, url).first<{ id: string }>();
+if (existing) return Astro.redirect(`/dashboard/monitor?id=${existing.id}`);
+if ((await countMonitors(env.DB, user.id)) >= FREE_MONITOR_LIMIT) return Astro.redirect('/dashboard');
+
+const id = crypto.randomUUID();
+await env.DB.prepare(
+  `INSERT INTO monitors (id, user_id, name, url, type, interval_sec, status, next_check_at, created_at)
+   VALUES (?, ?, ?, ?, 'http', 300, 'pending', 0, ?)`,
+).bind(id, user.id, parsed.hostname.replace(/^www\./, ''), url, Date.now()).run();
+
+return Astro.redirect(`/dashboard/monitor?id=${id}`);
+---

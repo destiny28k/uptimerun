@@ -1,0 +1,40 @@
+---
+import Logo from './Logo.astro';
+import { SITE } from '../site';
+const groups = [
+  { title: 'Product', links: ['Features', 'Pricing', 'Status pages', 'Changelog'] },
+  { title: 'Use cases', links: ['Online stores', 'Agencies & freelancers', 'SaaS & APIs', 'Blogs & WordPress'] },
+  { title: 'Free tools', links: ['Is my website down?', 'SSL checker', 'Domain expiry checker', 'HTTP status checker'] },
+  { title: 'Company', links: ['About', 'Contact', 'Privacy', 'Terms'] },
+];
+// Pages that exist so far; the rest are placeholders.
+const hrefs: Record<string, string> = { Features: '/#features', Pricing: '/pricing', 'Status pages': '/status/demo' };
+---
+<section class="border-t border-white/5">
+  <div class="relative mx-auto max-w-6xl px-4 sm:px-6 py-24 text-center">
+    <div class="glow absolute inset-0 pointer-events-none"></div>
+    <h2 class="relative text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance">Stop finding out from your customers.</h2>
+    <p class="relative mt-4 text-slate-400">Your first monitor takes 30 seconds. Free forever for 10 sites.</p>
+    <a href="/signup" class="relative mt-8 inline-flex rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-ink-950 shadow-lg shadow-brand/20 hover:bg-brand-soft transition-colors">Start monitoring free</a>
+  </div>
+</section>
+<footer class="border-t border-white/5">
+  <div class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 py-14 md:grid-cols-[1.5fr_repeat(4,1fr)]">
+    <div>
+      <Logo />
+      <p class="mt-4 max-w-xs text-sm text-slate-500">Simple, fair uptime monitoring and status pages for everyone.</p>
+      <p class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-slate-400">
+        <span class="size-2 rounded-full bg-brand"></span> All systems operational
+      </p>
+    </div>
+    {groups.map((g) => (
+      <div>
+        <p class="text-sm font-semibold text-white">{g.title}</p>
+        <ul class="mt-4 space-y-2.5 text-sm text-slate-500">
+          {g.links.map((l) => <li><a href={hrefs[l] ?? '#'} class="hover:text-slate-300">{l}</a></li>)}
+        </ul>
+      </div>
+    ))}
+  </div>
+  <div class="border-t border-white/5 py-6 text-center text-xs text-slate-600">© {new Date().getFullYear()} {SITE.name}. All rights reserved.</div>
+</footer>

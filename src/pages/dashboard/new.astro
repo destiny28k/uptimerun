@@ -1,0 +1,30 @@
+---
+import { env } from 'cloudflare:workers';
+import Dashboard from '../../layouts/Dashboard.astro';
+import MonitorForm from '../../components/dash/MonitorForm.astro';
+import { countMonitors, FREE_MONITOR_LIMIT } from '../../lib/data';
+import { DEFAULT_VALUES, readForm, validate } from '../../lib/monitorForm';
+
+const user = Astro.locals.user!;
+let error = '';
+let values = { ...DEFAULT_VALUES };
+
+if (Astro.request.method === 'POST') {
+  values = readForm(await Astro.request.formData());
+  const result = validate(values);
+  if (result.error) error = result.error;
+  else if ((await countMonitors(env.DB, user.id)) >= FREE_MONITOR_LIMIT) error = `The free plan includes ${FREE_MONITOR_LIMIT} monitors. Upgrade to add more.`;
+  else {
+    const d = result.data!;
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO monitors (id, user_id, name, url, type, keyword, interval_sec, timeout_sec, method, follow_redirects, status, next_check_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?)`,
+    ).bind(id, user.id, d.name, d.url, d.type, d.keyword, d.interval_sec, d.timeout_sec, d.method, d.follow_redirects, Date.now()).run();
+    return Astro.redirect(`/dashboard/monitor?id=${id}`, 303);
+  }
+}
+---
+<Dashboard title="New monitor" active="monitors" subtitle="Takes 30 seconds. We start checking within a minute.">
+  <MonitorForm values={values} error={error} submitLabel="Create monitor" cancelHref="/dashboard" />
+</Dashboard>

@@ -1,0 +1,94 @@
+---
+// The monitor form used by both /dashboard/new and /dashboard/edit.
+import { INTERVALS } from '../../lib/data';
+import { TIMEOUTS, type MonitorValues } from '../../lib/monitorForm';
+
+interface Props { values: MonitorValues; error?: string; submitLabel: string; cancelHref: string }
+const { values, error, submitLabel, cancelHref } = Astro.props;
+
+const types = [
+  { id: 'http', name: 'Website (HTTPS)', text: 'Check that a page loads and returns a success code.' },
+  { id: 'keyword', name: 'Keyword', text: 'Also check that a word appears on the page.' },
+];
+const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50';
+const label = 'block text-sm font-medium text-white mb-2';
+const chip = 'cursor-pointer rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 has-[:checked]:border-brand/60 has-[:checked]:bg-brand/10 has-[:checked]:text-white';
+---
+<form method="post" class="max-w-3xl space-y-8">
+  {error && <p class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+
+  <fieldset>
+    <legend class={label}>Monitor type</legend>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {types.map((t) => (
+        <label class="flex cursor-pointer gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 has-[:checked]:border-brand/60 has-[:checked]:bg-brand/[0.06]">
+          <input type="radio" name="type" value={t.id} checked={values.type === t.id} class="mt-1 accent-[#22c55e]" />
+          <span><span class="block text-sm font-medium text-white">{t.name}</span><span class="text-xs text-slate-400">{t.text}</span></span>
+        </label>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div class="sm:col-span-2">
+      <label class={label} for="url">URL to monitor</label>
+      <input id="url" name="url" required value={values.url} class={input} placeholder="https://yourwebsite.com" />
+    </div>
+    <div>
+      <label class={label} for="name">Friendly name <span class="font-normal text-slate-500">(optional)</span></label>
+      <input id="name" name="name" maxlength="60" value={values.name} class={input} placeholder="My website" />
+    </div>
+    <div>
+      <label class={label} for="keyword">Keyword <span class="font-normal text-slate-500">(keyword type only)</span></label>
+      <input id="keyword" name="keyword" maxlength="100" value={values.keyword} class={input} placeholder='e.g. Add to cart' />
+    </div>
+  </div>
+
+  <fieldset>
+    <legend class={label}>Check every</legend>
+    <div class="flex flex-wrap gap-2">
+      {INTERVALS.map((v) => (
+        <label class={chip}><input type="radio" name="interval" value={v.sec} class="sr-only" checked={values.interval === String(v.sec)} />{v.label}</label>
+      ))}
+    </div>
+  </fieldset>
+
+  <details class="group rounded-xl border border-white/10 px-5 py-4" open={values.timeout !== '30' || values.method !== 'HEAD' || values.follow === '0'}>
+    <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-white">
+      Advanced settings <span class="text-slate-500 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="mt-5 space-y-6">
+      <fieldset>
+        <legend class={label}>Request timeout</legend>
+        <p class="-mt-1 mb-3 text-xs text-slate-500">If your site takes longer than this to answer, we count it as down.</p>
+        <div class="flex flex-wrap gap-2">
+          {TIMEOUTS.map((t) => (
+            <label class={chip}><input type="radio" name="timeout" value={t} class="sr-only" checked={values.timeout === String(t)} />{t}s</label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend class={label}>HTTP method</legend>
+        <p class="-mt-1 mb-3 text-xs text-slate-500">HEAD is lighter and works for most sites. Keyword checks always use GET.</p>
+        <div class="flex flex-wrap gap-2">
+          {['HEAD', 'GET'].map((m) => (
+            <label class={chip}><input type="radio" name="method" value={m} class="sr-only" checked={values.method === m} />{m}</label>
+          ))}
+        </div>
+      </fieldset>
+      <label class="flex cursor-pointer items-start gap-3">
+        <input type="checkbox" name="follow" value="1" checked={values.follow !== '0'} class="mt-0.5 size-4 accent-[#22c55e]" />
+        <span><span class="block text-sm font-medium text-white">Follow redirects</span><span class="text-xs text-slate-500">If off, a redirect (3xx) still counts as up, but we don’t follow it.</span></span>
+      </label>
+    </div>
+  </details>
+
+  <p class="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
+    Alerts go to the channels on your <a href="/dashboard/alerts" class="text-brand hover:text-brand-soft">Alert contacts</a> page, or to your account email if you haven’t added any.
+  </p>
+
+  <div class="flex gap-3 border-t border-white/5 pt-6">
+    <button class="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-brand-soft">{submitLabel}</button>
+    <a href={cancelHref} class="rounded-lg border border-white/10 px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">Cancel</a>
+  </div>
+</form>

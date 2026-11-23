@@ -1,0 +1,61 @@
+---
+import { env } from 'cloudflare:workers';
+import Dashboard from '../../layouts/Dashboard.astro';
+import { countMonitors, FREE_MONITOR_LIMIT } from '../../lib/data';
+
+const user = Astro.locals.user!;
+const used = await countMonitors(env.DB, user.id);
+const channels = await env.DB.prepare(`SELECT COUNT(*) AS n FROM alert_channels WHERE user_id = ?`).bind(user.id).first<{ n: number }>();
+const usage = [
+  { label: 'Monitors', used, max: FREE_MONITOR_LIMIT },
+  { label: 'Alert contacts', used: channels?.n ?? 0, max: 10 },
+];
+---
+<Dashboard title="Settings & billing" active="settings">
+  <div class="grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <div class="space-y-6">
+      <section class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
+        <h2 class="font-semibold text-white">Account</h2>
+        <dl class="mt-5 grid gap-5 sm:grid-cols-2 text-sm">
+          <div><dt class="text-slate-500">Name</dt><dd class="mt-1 text-white">{user.name || '—'}</dd></div>
+          <div><dt class="text-slate-500">Email</dt><dd class="mt-1 text-white">{user.email}</dd></div>
+        </dl>
+        <button id="sign-out" class="mt-6 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/15">Log out</button>
+      </section>
+
+      <section class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
+        <h2 class="font-semibold text-white">Usage</h2>
+        <div class="mt-5 space-y-5">
+          {usage.map((u) => {
+            const pct = Math.min(100, Math.round((u.used / u.max) * 100));
+            return (
+              <div>
+                <div class="flex justify-between text-sm"><span class="text-slate-300">{u.label}</span><span class="tabular-nums text-slate-400">{u.used} / {u.max}</span></div>
+                <div class="mt-2 h-1.5 rounded-full bg-white/5"><div class:list={['h-full rounded-full', pct >= 100 ? 'bg-amber-400' : 'bg-brand']} style={`width:${pct}%`}></div></div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+
+    <aside class="h-fit rounded-xl border border-brand/40 bg-gradient-to-b from-brand/[0.08] to-transparent p-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-brand">Current plan</p>
+      <p class="mt-2 text-2xl font-semibold text-white">Free</p>
+      <p class="mt-1 text-sm text-slate-400">{FREE_MONITOR_LIMIT} monitors · email and Telegram alerts</p>
+      <div class="mt-6 rounded-lg border border-white/10 bg-ink-950/60 p-4">
+        <p class="font-medium text-white">Pro is coming soon</p>
+        <p class="mt-1 text-sm text-slate-400">50 monitors, 1-minute checks, custom domain status page.</p>
+        <p class="mt-4"><span class="text-3xl font-semibold text-white">$10</span><span class="text-sm text-slate-500"> / month</span></p>
+        <button disabled class="mt-4 w-full cursor-not-allowed rounded-lg bg-brand/40 py-2.5 text-sm font-semibold text-ink-950">Upgrade (soon)</button>
+      </div>
+    </aside>
+  </div>
+</Dashboard>
+
+<script>
+  document.getElementById('sign-out')?.addEventListener('click', async () => {
+    await fetch('/api/auth/sign-out', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    location.href = '/';
+  });
+</script>

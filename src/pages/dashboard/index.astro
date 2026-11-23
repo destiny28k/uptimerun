@@ -1,0 +1,131 @@
+---
+import { env } from 'cloudflare:workers';
+import Dashboard from '../../layouts/Dashboard.astro';
+import StatusDot from '../../components/dash/StatusDot.astro';
+import UptimeBars from '../../components/dash/UptimeBars.astro';
+import { listMonitors, listIncidents, toBars, intervalLabel, ago, fmtDate, fmtUptime } from '../../lib/data';
+import { formatDuration } from '../../lib/alerts';
+
+const user = Astro.locals.user!;
+const [all, incidents] = await Promise.all([listMonitors(env.DB, user.id), listIncidents(env.DB, user.id)]);
+// Problems first: down, then pending, up, paused.
+const rank = { down: 0, pending: 1, up: 2, paused: 3 } as Record<string, number>;
+const monitors = [...all].sort((a, b) => rank[a.status] - rank[b.status]);
+
+const count = (s: string) => monitors.filter((m) => m.status === s).length;
+const withData = monitors.filter((m) => m.uptime30 != null);
+const avgUptime = withData.length ? withData.reduce((a, m) => a + (m.uptime30 ?? 0), 0) / withData.length : null;
+const stats = [
+  { label: 'Up', value: count('up'), tone: 'text-brand' },
+  { label: 'Down', value: count('down'), tone: 'text-red-400' },
+  { label: 'Paused', value: count('paused'), tone: 'text-slate-400' },
+  { label: 'Uptime (30 days)', value: fmtUptime(avgUptime), tone: 'text-white' },
+];
+const downNow = monitors.filter((m) => m.status === 'down');
+---
+<Dashboard title="Monitors" active="monitors" subtitle="All your websites and services at a glance.">
+  <a slot="actions" href="/dashboard/new" class="hidden lg:inline-flex rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-brand-soft">+ New monitor</a>
+
+  {downNow.map((m) => (
+    <a href={`/dashboard/monitor?id=${m.id}`} class="mb-3 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/[0.07] px-4 py-3 text-sm hover:bg-red-500/10">
+      <StatusDot status="down" />
+      <p class="min-w-0 truncate text-red-200"><span class="font-semibold text-red-100">{m.name} is down</span> · {m.last_error ?? 'Unknown error'} · {formatDuration(Date.now() - (m.status_since ?? Date.now()))}</p>
+      <span class="ml-auto shrink-0 font-medium text-red-300">View →</span>
+    </a>
+  ))}
+
+  {monitors.length === 0 ? (
+    <div class="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-16 text-center">
+      <span class="mx-auto grid size-12 place-items-center rounded-xl bg-brand/10 ring-1 ring-brand/20 text-brand">
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg>
+      </span>
+      <h2 class="mt-5 text-lg font-semibold text-white">Add your first monitor</h2>
+      <p class="mx-auto mt-2 max-w-sm text-sm text-slate-400">Paste a website address and we’ll start checking it right away. It takes 30 seconds.</p>
+      <a href="/dashboard/new" class="mt-6 inline-flex rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-brand-soft">+ New monitor</a>
+    </div>
+  ) : (
+    <>
+      <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {stats.map((s) => (
+          <div class="rounded-xl border border-white/10 bg-ink-900/50 p-5">
+            <p class="text-xs text-slate-500">{s.label}</p>
+            <p class:list={['mt-2 text-3xl font-semibold tabular-nums', s.tone]}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <input id="monitor-search" type="search" placeholder="Search monitors…" autocomplete="off"
+          class="w-full sm:w-64 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50" />
+        <span class="text-xs text-slate-500">Sorted with problems first</span>
+      </div>
+      <div class="mt-3 overflow-hidden rounded-xl border border-white/10">
+        <div class="hidden md:grid grid-cols-[minmax(0,16rem)_1fr_6rem_6rem] gap-6 border-b border-white/10 bg-white/[0.02] px-5 py-3 text-xs font-medium text-slate-500">
+          <span>Monitor</span><span>Last 60 checks</span><span class="text-right">Response</span><span class="text-right">Uptime 30d</span>
+        </div>
+        <ul class="divide-y divide-white/5">
+          {monitors.map((m) => (
+            <li data-search={`${m.name} ${m.url}`.toLowerCase()}>
+              <a href={`/dashboard/monitor?id=${m.id}`} class="grid grid-cols-[1fr_auto] md:grid-cols-[minmax(0,16rem)_1fr_6rem_6rem] items-center gap-x-6 gap-y-3 px-5 py-4 hover:bg-white/[0.02] transition-colors">
+                <div class="flex min-w-0 items-center gap-3">
+                  <StatusDot status={m.status} />
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-white">{m.name}</p>
+                    <p class="truncate text-xs text-slate-500">
+                      {m.type === 'keyword' ? 'Keyword' : 'HTTPS'} · every {intervalLabel(m.interval_sec)} · {m.status === 'pending' ? 'first check soon' : m.status === 'paused' ? 'paused' : ago(m.last_checked_at)}
+                    </p>
+                  </div>
+                </div>
+                <div class="col-span-2 md:col-span-1 order-last md:order-none"><UptimeBars history={toBars(m.history)} /></div>
+                <span class="hidden md:block text-right text-sm tabular-nums text-slate-400">{m.last_ms ? `${m.last_ms} ms` : '—'}</span>
+                <span class:list={['text-right text-sm font-medium tabular-nums', m.status === 'down' ? 'text-red-400' : 'text-slate-200']}>{fmtUptime(m.uptime30)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p id="no-match" class="hidden px-5 py-6 text-sm text-slate-400">No monitors match your search.</p>
+      </div>
+    </>
+  )}
+
+  <h2 id="incidents" class="mt-12 text-lg font-semibold text-white">Recent incidents</h2>
+  {incidents.length === 0 ? (
+    <p class="mt-4 rounded-xl border border-white/10 bg-ink-900/50 px-5 py-6 text-sm text-slate-400">No incidents yet. Nice and quiet. 🌿</p>
+  ) : (
+    <div class="mt-4 overflow-x-auto rounded-xl border border-white/10">
+      <table class="w-full min-w-[640px] text-sm">
+        <thead class="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
+          <tr><th class="px-5 py-3 text-left font-medium">Status</th><th class="px-5 py-3 text-left font-medium">Monitor</th><th class="px-5 py-3 text-left font-medium">Root cause</th><th class="px-5 py-3 text-left font-medium">Started</th><th class="px-5 py-3 text-left font-medium">Duration</th></tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          {incidents.map((i) => (
+            <tr>
+              <td class="px-5 py-3.5">
+                <span class:list={['rounded-full px-2 py-0.5 text-xs font-medium', i.resolved_at ? 'bg-brand/10 text-brand' : 'bg-red-500/15 text-red-300']}>{i.resolved_at ? 'Resolved' : 'Ongoing'}</span>
+              </td>
+              <td class="px-5 py-3.5 text-white">{i.monitor_name}</td>
+              <td class="px-5 py-3.5 text-slate-400">{i.cause}</td>
+              <td class="px-5 py-3.5 text-slate-400">{fmtDate(i.started_at)}</td>
+              <td class="px-5 py-3.5 text-slate-400">{formatDuration((i.resolved_at ?? Date.now()) - i.started_at)}{i.resolved_at ? '' : ' so far'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</Dashboard>
+
+<script>
+  // Filter the monitor list as you type.
+  const search = document.getElementById('monitor-search') as HTMLInputElement | null;
+  search?.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll<HTMLElement>('li[data-search]').forEach((li) => {
+      const match = !q || li.dataset.search!.includes(q);
+      li.hidden = !match;
+      if (match) shown++;
+    });
+    document.getElementById('no-match')?.classList.toggle('hidden', shown > 0);
+  });
+</script>

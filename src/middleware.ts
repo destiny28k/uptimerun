@@ -1,0 +1,23 @@
+import { defineMiddleware } from 'astro:middleware';
+import { env } from 'cloudflare:workers';
+import { createAuth } from './lib/auth';
+
+const PROTECTED = /^\/dashboard(\/|$)/;
+const GUEST_ONLY = /^\/(login|signup)\/?$/;
+
+export const onRequest = defineMiddleware(async (ctx, next) => {
+  ctx.locals.user = null;
+  const path = ctx.url.pathname;
+
+  // Only look up the session where it matters (dashboard and auth pages).
+  if (PROTECTED.test(path) || GUEST_ONLY.test(path)) {
+    const session = await createAuth(env).api.getSession({ headers: ctx.request.headers });
+    if (session) {
+      const { id, name, email } = session.user;
+      ctx.locals.user = { id, name, email };
+    }
+    if (PROTECTED.test(path) && !ctx.locals.user) return ctx.redirect('/login');
+    if (GUEST_ONLY.test(path) && ctx.locals.user) return ctx.redirect('/dashboard');
+  }
+  return next();
+});

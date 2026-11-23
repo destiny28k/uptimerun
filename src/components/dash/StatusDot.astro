@@ -1,0 +1,6 @@
+---
+import type { Status } from '../../data/mock';
+const { status, size = 'size-2.5' } = Astro.props as { status: Status; size?: string };
+const color = status === 'up' ? 'bg-brand text-brand' : status === 'down' ? 'bg-red-500 text-red-500 pulse-dot' : status === 'pending' ? 'bg-amber-400 text-amber-400 pulse-dot' : 'bg-slate-500 text-slate-500';
+---
+<span class:list={['relative inline-block shrink-0 rounded-full', size, color]}></span>
