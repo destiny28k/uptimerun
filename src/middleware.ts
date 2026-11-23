@@ -21,8 +21,8 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
   if (PROTECTED.test(path) || GUEST_ONLY.test(path)) {
     const session = await createAuth(env).api.getSession({ headers: ctx.request.headers });
     if (session) {
-      const { id, name, email } = session.user;
-      ctx.locals.user = { id, name, email };
+      const { id, name, email, image, emailVerified, createdAt } = session.user;
+      ctx.locals.user = { id, name, email, image, emailVerified, createdAt };
     }
     if (PROTECTED.test(path) && !ctx.locals.user) return ctx.redirect('/login');
     if (PROTECTED.test(path)) ctx.locals.plan = await getPlan(env.DB, ctx.locals.user!.id);

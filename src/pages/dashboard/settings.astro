@@ -2,7 +2,7 @@
 import { env } from 'cloudflare:workers';
 import Dashboard from '../../layouts/Dashboard.astro';
 import { countMonitors, intervalLabel } from '../../lib/data';
-import { PLANS } from '../../data/plans';
+import { PLANS, YEARLY_SAVING } from '../../data/plans';
 
 const user = Astro.locals.user!;
 const { id: planId, limits } = Astro.locals.plan!;
@@ -11,72 +11,157 @@ const flag = Astro.url.searchParams;
 const billingMsg = flag.get('upgraded') ? ['ok', 'Payment received. Your plan updates within a few seconds. Refresh if it hasn’t yet.']
   : flag.get('billing') === 'error' ? ['err', 'We couldn’t open checkout. Please try again or email us.']
   : flag.get('billing') === 'soon' ? ['err', 'Online payment is being set up. Please check back shortly.'] : null;
-const renewDate = sub?.current_period_end ? new Date(sub.current_period_end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-const [used, channels, pages] = await Promise.all([
+const fmtDate = (d: number | Date | string | null | undefined) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+const renewDate = fmtDate(sub?.current_period_end);
+const [used, channels, pages, google] = await Promise.all([
   countMonitors(env.DB, user.id),
   env.DB.prepare(`SELECT COUNT(*) AS n FROM alert_channels WHERE user_id = ?`).bind(user.id).first<{ n: number }>(),
   env.DB.prepare(`SELECT COUNT(*) AS n FROM status_pages WHERE user_id = ?`).bind(user.id).first<{ n: number }>(),
+  env.DB.prepare(`SELECT 1 AS y FROM account WHERE userId = ? AND providerId = 'google' LIMIT 1`).bind(user.id).first(),
 ]);
+
+const ICON = {
+  monitor: 'M3 12h4l3-8 4 16 3-8h4',
+  page: 'M4 5h16v14H4zM4 9h16M8 13h5',
+  bell: 'M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2ZM10 20a2 2 0 0 0 4 0',
+  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v5l3 2',
+};
 const usage = [
-  { label: 'Monitors', used, max: limits.monitors },
-  { label: 'Status pages', used: pages?.n ?? 0, max: limits.statusPages },
-  { label: 'Alert contacts', used: channels?.n ?? 0, max: 10 },
+  { label: 'Monitors', icon: ICON.monitor, used, max: limits.monitors, href: '/dashboard' },
+  { label: 'Status pages', icon: ICON.page, used: pages?.n ?? 0, max: limits.statusPages, href: '/dashboard/status-pages' },
+  { label: 'Alert contacts', icon: ICON.bell, used: channels?.n ?? 0, max: 10, href: '/dashboard/alerts' },
 ];
+
 const current = PLANS.find((p) => p.id === planId)!;
 const next = planId === 'free' ? PLANS[1] : planId === 'pro' ? PLANS[2] : null;
+const paid = planId !== 'free';
+const yearly = sub?.billing === 'yearly';
+const price = yearly ? current.yearly : current.monthly;
+const status = !paid ? null
+  : sub?.status === 'cancelled' ? { text: 'Cancelled', cls: 'bg-slate-500/15 text-slate-300', note: `Access until ${renewDate}` }
+  : sub?.status === 'past_due' ? { text: 'Payment failed', cls: 'bg-amber-400/15 text-amber-300', note: 'Please update your card to keep your plan.' }
+  : { text: 'Active', cls: 'bg-brand/15 text-brand', note: renewDate ? `Renews ${renewDate}` : null };
+
+const initials = (user.name || user.email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((s) => s[0]!.toUpperCase()).join('');
+const card = 'rounded-xl border border-white/10 bg-ink-900/50';
 ---
-<Dashboard title="Settings & billing" active="settings">
+<Dashboard title="Settings & billing" active="settings" subtitle="Your account, what you’re using, and your plan.">
   {billingMsg && <p class:list={['mb-6 rounded-lg border px-4 py-3 text-sm', billingMsg[0] === 'ok' ? 'border-brand/30 bg-brand/10 text-brand' : 'border-amber-400/30 bg-amber-400/10 text-amber-200']}>{billingMsg[1]}</p>}
-  <div class="grid gap-6 lg:grid-cols-[1fr_22rem]">
+
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
     <div class="space-y-6">
-      <section class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
-        <h2 class="font-semibold text-white">Account</h2>
-        <dl class="mt-5 grid gap-5 sm:grid-cols-2 text-sm">
-          <div><dt class="text-slate-500">Name</dt><dd class="mt-1 text-white">{user.name || '—'}</dd></div>
-          <div><dt class="text-slate-500">Email</dt><dd class="mt-1 text-white">{user.email}</dd></div>
+      <!-- Account -->
+      <section class={card}>
+        <div class="flex flex-wrap items-center gap-4 p-6">
+          {user.image
+            ? <img src={user.image} alt="" referrerpolicy="no-referrer" class="size-14 rounded-full ring-1 ring-white/10" />
+            : <div class="grid size-14 place-items-center rounded-full bg-brand/15 text-lg font-semibold text-brand ring-1 ring-brand/30">{initials}</div>}
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-lg font-semibold text-white">{user.name || 'Your account'}</p>
+            <p class="truncate text-sm text-slate-400">{user.email}</p>
+          </div>
+          <button id="sign-out" class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg>
+            Log out
+          </button>
+        </div>
+        <dl class="grid border-t border-white/10 text-sm sm:grid-cols-3 sm:divide-x sm:divide-white/10">
+          <div class="px-6 py-4"><dt class="text-xs text-slate-500">Sign-in method</dt><dd class="mt-1 flex items-center gap-2 text-white">
+            {google
+              ? <><svg viewBox="0 0 24 24" class="size-4" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.4-.2-2H12v3.9h6c-.1 1-.8 2.5-2.3 3.5v2.8h3.7c2.1-2 3.2-4.9 3.2-8.2Z"/><path fill="#34A853" d="M12 23c3 0 5.6-1 7.4-2.7l-3.7-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2v2.9C3.8 20.6 7.6 23 12 23Z"/><path fill="#FBBC05" d="M5.8 14.1c-.2-.7-.4-1.4-.4-2.1s.1-1.4.4-2.1V7H2C1.3 8.5.9 10.2.9 12s.4 3.5 1.1 5l3.8-2.9Z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2C17.6 2.1 15 1 12 1 7.6 1 3.8 3.4 2 7l3.8 2.9C6.7 7.3 9.1 5.4 12 5.4Z"/></svg>Google</>
+              : <><svg viewBox="0 0 24 24" class="size-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>Email link</>}
+          </dd></div>
+          <div class="border-t border-white/10 px-6 py-4 sm:border-t-0"><dt class="text-xs text-slate-500">Member since</dt><dd class="mt-1 text-white">{fmtDate(user.createdAt) ?? '—'}</dd></div>
+          <div class="border-t border-white/10 px-6 py-4 sm:border-t-0"><dt class="text-xs text-slate-500">Email</dt><dd class="mt-1 flex items-center gap-1.5 text-white">
+            {user.emailVerified ? <><span class="size-1.5 rounded-full bg-brand"></span>Verified</> : <><span class="size-1.5 rounded-full bg-amber-400"></span>Not verified</>}
+          </dd></div>
         </dl>
-        <button id="sign-out" class="mt-6 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/15">Log out</button>
       </section>
 
-      <section class="rounded-xl border border-white/10 bg-ink-900/50 p-6">
-        <h2 class="font-semibold text-white">Usage</h2>
-        <div class="mt-5 space-y-5">
+      <!-- Usage -->
+      <section class={card}>
+        <div class="flex items-center justify-between px-6 pt-6">
+          <h2 class="font-semibold text-white">Usage</h2>
+          <span class="text-xs text-slate-500">{limits.name} plan limits</span>
+        </div>
+        <div class="grid gap-4 p-6 sm:grid-cols-2">
           {usage.map((u) => {
             const unlimited = u.max >= 1000;
-            const pct = unlimited ? 5 : Math.min(100, Math.round((u.used / u.max) * 100));
+            const pct = unlimited ? 4 : Math.min(100, Math.round((u.used / u.max) * 100));
+            const full = !unlimited && u.used >= u.max;
+            const near = !unlimited && !full && pct >= 80;
             return (
-              <div>
-                <div class="flex justify-between text-sm"><span class="text-slate-300">{u.label}</span><span class="tabular-nums text-slate-400">{u.used} / {unlimited ? 'Unlimited' : u.max}</span></div>
-                <div class="mt-2 h-1.5 rounded-full bg-white/5"><div class:list={['h-full rounded-full', pct >= 100 ? 'bg-amber-400' : 'bg-brand']} style={`width:${pct}%`}></div></div>
-              </div>
+              <a href={u.href} class="group rounded-lg border border-white/10 bg-white/[0.02] p-4 transition hover:border-white/20 hover:bg-white/[0.04]">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm text-slate-300">
+                    <svg viewBox="0 0 24 24" class="size-4 text-slate-500 group-hover:text-slate-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={u.icon} /></svg>
+                    {u.label}
+                  </span>
+                  {full && <span class="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">Limit reached</span>}
+                  {near && <span class="rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] font-medium text-amber-300/90">Almost full</span>}
+                </div>
+                <p class="mt-3 tabular-nums"><span class="text-2xl font-semibold text-white">{u.used}</span><span class="text-sm text-slate-500"> / {unlimited ? 'Unlimited' : u.max}</span></p>
+                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5"><div class:list={['h-full rounded-full', full || near ? 'bg-amber-400' : 'bg-brand']} style={`width:${Math.max(pct, u.used ? 4 : 0)}%`}></div></div>
+                <p class="mt-2 text-xs text-slate-500">{unlimited ? 'No limit on your plan' : full ? 'Upgrade to add more' : `${u.max - u.used} left`}</p>
+              </a>
             );
           })}
+          <div class="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+            <span class="flex items-center gap-2 text-sm text-slate-300">
+              <svg viewBox="0 0 24 24" class="size-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ICON.clock} /></svg>
+              Fastest check
+            </span>
+            <p class="mt-3 text-2xl font-semibold text-white">{intervalLabel(limits.minIntervalSec)}</p>
+            <p class="mt-5 text-xs text-slate-500">{next ? `${next.highlights[1]} on ${next.name}` : 'The fastest we offer'}</p>
+          </div>
         </div>
       </section>
     </div>
 
-    <aside class="h-fit rounded-xl border border-brand/40 bg-gradient-to-b from-brand/[0.08] to-transparent p-6">
-      <p class="text-xs font-semibold uppercase tracking-wider text-brand">Current plan</p>
-      <p class="mt-2 text-2xl font-semibold text-white">{limits.name}</p>
-      <p class="mt-1 text-sm text-slate-400">{limits.monitors} monitors · checks every {intervalLabel(limits.minIntervalSec)}</p>
-      <ul class="mt-4 space-y-1.5 text-sm text-slate-300">
-        {current.highlights.slice(2, 5).map((h) => <li class="flex gap-2"><span class="text-brand">✓</span>{h}</li>)}
-      </ul>
-      {sub?.provider_customer_id && planId !== 'free' && (
-        <div class="mt-4 text-sm">
-          <p class="text-slate-400">{sub.status === 'cancelled' ? `Cancelled · access until ${renewDate}` : sub.status === 'past_due' ? 'Payment failed · please update your card' : `Billed ${sub.billing} · renews ${renewDate}`}</p>
-          <a href="/api/billing/portal" class="mt-3 block w-full rounded-lg border border-white/15 py-2.5 text-center font-semibold text-white hover:bg-white/5">Manage billing</a>
+    <!-- Plan -->
+    <aside class="h-fit space-y-4">
+      <section class="overflow-hidden rounded-xl border border-brand/40 bg-gradient-to-b from-brand/[0.08] to-transparent">
+        <div class="p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand">Current plan</p>
+            {status && <span class:list={['rounded-full px-2.5 py-0.5 text-xs font-medium', status.cls]}>{status.text}</span>}
+          </div>
+          <div class="mt-3 flex items-end justify-between gap-3">
+            <p class="text-3xl font-semibold text-white">{limits.name}</p>
+            <p class="pb-1 text-sm text-slate-400">{paid ? <><span class="text-lg font-semibold text-white">${price}</span> / {yearly ? 'year' : 'month'}</> : 'Free forever'}</p>
+          </div>
+          <p class="mt-1 text-sm text-slate-400">{current.blurb}</p>
+          <ul class="mt-5 space-y-2 text-sm text-slate-300">
+            {current.highlights.slice(0, 5).map((h) => (
+              <li class="flex gap-2.5"><svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0 text-brand" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>{h}</li>
+            ))}
+          </ul>
         </div>
-      )}
+        {paid && (
+          <div class="border-t border-white/10 bg-ink-950/40 px-6 py-4">
+            {status?.note && <p class:list={['text-sm', sub?.status === 'past_due' ? 'text-amber-200' : 'text-slate-400']}>{status.note}{sub?.status !== 'past_due' && sub?.billing && <span class="text-slate-500"> · billed {sub.billing}</span>}</p>}
+            {sub?.provider_customer_id
+              ? <a href="/api/billing/portal" class:list={['mt-3 block w-full rounded-lg py-2.5 text-center text-sm font-semibold', sub.status === 'past_due' ? 'bg-amber-400 text-ink-950 hover:bg-amber-300' : 'border border-white/15 text-white hover:bg-white/5']}>{sub.status === 'past_due' ? 'Update payment method' : 'Manage billing'}</a>
+              : <p class="mt-2 text-xs text-slate-500">Need help with billing? Email us any time.</p>}
+            {sub?.provider_customer_id && <p class="mt-2 text-center text-xs text-slate-500">Invoices, card and cancellation</p>}
+          </div>
+        )}
+      </section>
+
       {next && (
-        <div class="mt-6 rounded-lg border border-white/10 bg-ink-950/60 p-4">
-          <p class="font-medium text-white">Upgrade to {next.name}</p>
-          <p class="mt-1 text-sm text-slate-400">{next.highlights.slice(0, 3).join(' · ')}</p>
-          <p class="mt-4"><span class="text-3xl font-semibold text-white">${next.monthly}</span><span class="text-sm text-slate-500"> / month</span></p>
-          <p class="text-xs text-slate-500">or ${next.yearly} / year</p>
-          <a href="/pricing" class="mt-4 block w-full rounded-lg bg-brand py-2.5 text-center text-sm font-semibold text-ink-950 hover:bg-brand-soft">See plans</a>
+        <section class={`${card} p-6`}>
+          <div class="flex items-center justify-between">
+            <p class="font-semibold text-white">Upgrade to {next.name}</p>
+            <span class="rounded-full bg-brand/15 px-2 py-0.5 text-[11px] font-medium text-brand">Save {YEARLY_SAVING}% yearly</span>
+          </div>
+          <p class="mt-1 text-sm text-slate-400">{next.blurb}</p>
+          <ul class="mt-4 space-y-1.5 text-sm text-slate-300">
+            {next.highlights.slice(0, 4).map((h) => <li class="flex gap-2"><span class="text-brand">+</span>{h}</li>)}
+          </ul>
+          <p class="mt-5"><span class="text-3xl font-semibold text-white">${next.monthly}</span><span class="text-sm text-slate-500"> / month</span><span class="ml-2 text-xs text-slate-500">or ${next.yearly} / year</span></p>
+          <a href="/pricing" class="mt-4 block w-full rounded-lg bg-brand py-2.5 text-center text-sm font-semibold text-ink-950 hover:bg-brand-soft">Upgrade to {next.name}</a>
           <p class="mt-2 text-center text-xs text-slate-500">Secure checkout · Cancel any time</p>
-        </div>
+        </section>
       )}
     </aside>
   </div>

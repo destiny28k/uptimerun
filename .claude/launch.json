@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "uptime-monitor",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "C:/Users/shada/OneDrive/Desktop/uptime-monitor", "run", "dev", "--", "--port", "4330"],
-      "port": 4330
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["astro", "dev", "--port", "4335"],
+      "port": 4335,
+      "autoPort": false
     }
   ]
 }

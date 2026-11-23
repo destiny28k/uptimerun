@@ -1,10 +1,9 @@
 ---
 import { env } from 'cloudflare:workers';
 import Dashboard from '../../layouts/Dashboard.astro';
-import StatusDot from '../../components/dash/StatusDot.astro';
 import UptimeBars from '../../components/dash/UptimeBars.astro';
 import { getMonitor, periodStats, listIncidents, toBars, intervalLabel, ago, fmtDate, fmtUptime } from '../../lib/data';
-import { formatDuration, sendAlerts } from '../../lib/alerts';
+import { sendAlerts } from '../../lib/alerts';
 
 const user = Astro.locals.user!;
 const id = Astro.url.searchParams.get('id') ?? '';
@@ -37,63 +36,111 @@ if (Astro.request.method === 'POST') {
 const m = await getMonitor(env.DB, user.id, id);
 if (!m) return Astro.redirect('/dashboard');
 
-const [d1, d7, d30, incidents] = await Promise.all([
-  periodStats(env.DB, m.id, 1), periodStats(env.DB, m.id, 7), periodStats(env.DB, m.id, 30), listIncidents(env.DB, user.id, m.id, 5),
+const DAY = 86_400_000;
+const now = Date.now();
+const [d1, d7, d30, incidents, recent] = await Promise.all([
+  periodStats(env.DB, m.id, 1), periodStats(env.DB, m.id, 7), periodStats(env.DB, m.id, 30), listIncidents(env.DB, user.id, m.id, 8),
+  env.DB.prepare(`SELECT started_at, resolved_at FROM incidents WHERE monitor_id = ? AND (resolved_at IS NULL OR resolved_at >= ?)`)
+    .bind(m.id, now - 30 * DAY).all<{ started_at: number; resolved_at: number | null }>().then((r) => r.results),
 ]);
 
+/** "3d 4h", "3h 41m", "12m" */
+const dur = (ms: number) => {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  const d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), mm = mins % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${mm}m` : `${mm}m`;
+};
+// Incidents and downtime that overlap each window.
+const windowStats = (days: number) => {
+  const from = days === 1 ? new Date(new Date().toISOString().slice(0, 10)).getTime() : now - days * DAY;
+  const hits = recent.filter((i) => (i.resolved_at ?? now) > from);
+  const down = hits.reduce((sum, i) => sum + ((i.resolved_at ?? now) - Math.max(i.started_at, from)), 0);
+  return { count: hits.length, down };
+};
 const periods = [
-  { label: 'Today (UTC)', s: d1 }, { label: 'Last 7 days', s: d7 }, { label: 'Last 30 days', s: d30 },
+  { label: 'Today', note: 'UTC', s: d1, w: windowStats(1) },
+  { label: 'Last 7 days', s: d7, w: windowStats(7) },
+  { label: 'Last 30 days', s: d30, w: windowStats(30) },
 ];
 
-// Response-time chart from the last 60 successful checks.
+// Response-time chart from the last successful checks.
 const times = m.ms_history.split(',').map(Number).filter((n) => n > 0);
-const W = 600, H = 160;
-const max = Math.max(200, ...times) * 1.15;
-const pts = times.map((v, i) => [(i / Math.max(1, times.length - 1)) * W, H - (v / max) * H]);
+const W = 600, H = 180;
+const top = Math.ceil((Math.max(200, ...times) * 1.15) / 100) * 100;
+const pts = times.map((v, i) => [(i / Math.max(1, times.length - 1)) * W, H - (v / top) * H]);
 const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 const area = pts.length ? `${line} L${W},${H} L0,${H} Z` : '';
 const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null;
+const rtStats = avg ? [
+  { label: 'Average', v: avg, icon: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4', cls: 'text-slate-400' },
+  { label: 'Fastest', v: Math.min(...times), icon: 'M12 5v14M6 13l6 6 6-6', cls: 'text-brand' },
+  { label: 'Slowest', v: Math.max(...times), icon: 'M12 19V5M6 11l6-6 6 6', cls: 'text-amber-300' },
+] : [];
 
-const badge = {
-  up: { text: `Up for ${formatDuration(Date.now() - (m.status_since ?? m.created_at))}`, cls: 'bg-brand/10 text-brand' },
-  down: { text: `Down for ${formatDuration(Date.now() - (m.status_since ?? m.created_at))}`, cls: 'bg-red-500/15 text-red-300' },
-  pending: { text: 'Waiting for first check', cls: 'bg-amber-400/10 text-amber-300' },
-  paused: { text: 'Paused', cls: 'bg-white/5 text-slate-400' },
+const bars = toBars(m.history);
+const barsKnown = bars.filter((b) => b !== 'paused');
+const barsUp = barsKnown.length ? (100 * barsKnown.filter((b) => b === 'up').length) / barsKnown.length : null;
+
+const since = now - (m.status_since ?? m.created_at);
+const state = {
+  up: { word: 'Up', sub: `Up for ${dur(since)}`, text: 'text-brand', ring: 'bg-brand/15 ring-brand/30 text-brand', icon: 'M6 15l6-6 6 6' },
+  down: { word: 'Down', sub: `Down for ${dur(since)}`, text: 'text-red-400', ring: 'bg-red-500/15 ring-red-500/30 text-red-400', icon: 'M6 9l6 6 6-6' },
+  pending: { word: 'Checking', sub: 'Waiting for the first check', text: 'text-amber-300', ring: 'bg-amber-400/15 ring-amber-400/30 text-amber-300', icon: 'M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z' },
+  paused: { word: 'Paused', sub: `Paused ${dur(since)} ago`, text: 'text-slate-300', ring: 'bg-white/5 ring-white/10 text-slate-400', icon: 'M9 6v12M15 6v12' },
 }[m.status];
+
 // Domain & SSL expiry (checked once a day).
 const isHttps = m.url.startsWith('https:');
 const expiryRows = [
-  { label: 'SSL certificate', at: m.ssl_expires_at, extra: m.ssl_issuer, na: isHttps ? 'Not found yet' : 'Not HTTPS' },
-  { label: 'Domain', at: m.domain_expires_at, extra: null, na: 'Not published by this domain’s registry' },
+  { label: 'SSL certificate', at: m.ssl_expires_at, extra: m.ssl_issuer, na: isHttps ? 'Not found yet' : 'Not HTTPS', icon: 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z' },
+  { label: 'Domain', at: m.domain_expires_at, extra: null, na: 'Not published by this domain’s registry', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9Z' },
 ].map((r) => {
-  const days = r.at ? Math.ceil((r.at - Date.now()) / 86_400_000) : null;
+  const days = r.at ? Math.ceil((r.at - now) / DAY) : null;
   const tone = days == null ? 'text-slate-400' : days <= 7 ? 'text-red-300' : days <= 30 ? 'text-amber-300' : 'text-brand';
+  const bar = days == null ? '' : days <= 7 ? 'bg-red-400' : days <= 30 ? 'bg-amber-400' : 'bg-brand';
   const left = days == null ? '' : days > 0 ? `${days} days left` : 'Expired';
-  return { ...r, days, tone, left, date: r.at ? new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '' };
+  return { ...r, days, tone, bar, left, date: r.at ? new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '' };
 });
 const expiryPending = !m.expiry_checked_at;
-const expiryOn = Astro.locals.plan!.limits.expiryChecks;
-const btn = 'rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10';
+const { limits } = Astro.locals.plan!;
+const expiryOn = limits.expiryChecks;
+const canFaster = m.interval_sec > limits.minIntervalSec;
+const fasterPlan = limits.minIntervalSec > 60 ? '1-min' : limits.minIntervalSec > 30 ? '30-sec' : null;
+
+const host = (() => { try { return new URL(m.url).host; } catch { return m.url; } })();
+const card = 'rounded-xl border border-white/10 bg-ink-900/50';
+const btn = 'inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-medium text-white hover:bg-white/10';
+const ico = 'size-4 shrink-0';
 ---
 <Dashboard title={m.name} active="monitors">
+  <div slot="icon" class:list={['grid size-14 shrink-0 place-items-center rounded-full ring-1', state.ring]}>
+    <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={state.icon} /></svg>
+  </div>
+  <p slot="meta" class="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-slate-400">
+    <span>{m.type === 'keyword' ? 'Keyword' : 'HTTP/S'} monitor for</span>
+    <a href={m.url} target="_blank" rel="noopener" class="inline-flex min-w-0 items-center gap-1 truncate text-brand hover:underline">{m.url}
+      <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6" /></svg>
+    </a>
+  </p>
   <div slot="actions" class="flex flex-wrap gap-2">
-    <form method="post"><button name="action" value="test" class={btn} title="Send a test alert to your alert contacts">Send test alert</button></form>
-    <a href={`/dashboard/edit?id=${m.id}`} class={btn}>Edit</a>
-    <form method="post"><button name="action" value={m.status === 'paused' ? 'resume' : 'pause'} class={btn}>{m.status === 'paused' ? 'Resume' : 'Pause'}</button></form>
-    <form method="post" onsubmit="return confirm('Delete this monitor and its history? This can’t be undone.')">
-      <button name="action" value="delete" class="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10">Delete</button>
+    <form method="post"><button name="action" value="test" class={btn} title="Send a test alert to your alert contacts">
+      <svg viewBox="0 0 24 24" class={ico} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2ZM10 20a2 2 0 0 0 4 0" /></svg>Test alert
+    </button></form>
+    <form method="post"><button name="action" value={m.status === 'paused' ? 'resume' : 'pause'} class={btn}>
+      <svg viewBox="0 0 24 24" class={ico} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={m.status === 'paused' ? 'M7 5l12 7-12 7z' : 'M9 6v12M15 6v12'} /></svg>{m.status === 'paused' ? 'Resume' : 'Pause'}
+    </button></form>
+    <a href={`/dashboard/edit?id=${m.id}`} class={btn}>
+      <svg viewBox="0 0 24 24" class={ico} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4ZM13 7l4 4" /></svg>Edit
+    </a>
+    <form method="post" data-confirm="Delete this monitor and all its history? This can’t be undone." data-confirm-title="Delete monitor?">
+      <button name="action" value="delete" class="inline-flex items-center gap-2 rounded-lg border border-red-500/30 px-3.5 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10" title="Delete monitor">
+        <svg viewBox="0 0 24 24" class={ico} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>Delete
+      </button>
     </form>
   </div>
 
-  <div class="-mt-6 mb-8 flex flex-wrap items-center gap-3 text-sm">
-    <span class:list={['inline-flex items-center gap-2 rounded-full px-3 py-1 font-medium', badge.cls]}><StatusDot status={m.status} size="size-2" /> {badge.text}</span>
-    <a href={m.url} target="_blank" rel="noopener" class="truncate text-slate-400 hover:text-white">{m.url} ↗</a>
-    <span class="text-slate-600">·</span>
-    <span class="text-slate-400">{m.type === 'keyword' ? `Keyword "${m.keyword}"` : 'HTTPS'} check every {intervalLabel(m.interval_sec)}</span>
-  </div>
-
   {Astro.url.searchParams.get('limit') && (
-    <p class="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">You’ve reached the {Astro.locals.plan!.limits.monitors}-monitor limit of your plan. Pause another monitor or <a href="/pricing" class="font-semibold underline">upgrade</a> to resume this one.</p>
+    <p class="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">You’ve reached the {limits.monitors}-monitor limit of your plan. Pause another monitor or <a href="/pricing" class="font-semibold underline">upgrade</a> to resume this one.</p>
   )}
   {Astro.url.searchParams.get('tested') && (
     <p class="mb-6 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-brand">Test alert sent to your alert contacts. Check your inbox or chat app.</p>
@@ -102,91 +149,197 @@ const btn = 'rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font
     <p class="mb-6 rounded-xl border border-red-500/30 bg-red-500/[0.07] px-4 py-3 text-sm text-red-200">Last error: <span class="font-semibold">{m.last_error}</span></p>
   )}
 
-  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-    {periods.map((p) => (
-      <div class="rounded-xl border border-white/10 bg-ink-900/50 p-5">
-        <p class="text-xs text-slate-500">{p.label}</p>
-        <p class="mt-2 text-2xl font-semibold tabular-nums text-white">{fmtUptime(p.s.uptime)}</p>
-        <p class="mt-1 text-xs text-slate-500">{p.s.checks ? `${p.s.checks} checks` : 'No data yet'}</p>
+  <!-- Status strip -->
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1.4fr]">
+    <div class={`${card} p-5`}>
+      <p class="text-sm text-slate-400">Current status</p>
+      <p class:list={['mt-2 text-3xl font-semibold', state.text]}>{state.word}</p>
+      <p class="mt-1 text-sm text-slate-400">{state.sub}</p>
+    </div>
+    <div class={`${card} p-5`}>
+      <p class="text-sm text-slate-400">Last check</p>
+      <p class="mt-2 text-3xl font-semibold text-white">{m.last_checked_at ? ago(m.last_checked_at) : '—'}</p>
+      <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-400">
+        <span>Every {intervalLabel(m.interval_sec)}{m.last_ms ? ` · ${m.last_ms} ms` : ''}</span>
+        {canFaster ? <a href={`/dashboard/edit?id=${m.id}`} class="rounded-md bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand hover:bg-brand/15">Check faster</a>
+          : fasterPlan && <a href="/pricing" class="rounded-md bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand hover:bg-brand/15">Get {fasterPlan} checks</a>}
       </div>
-    ))}
-    <div class="rounded-xl border border-white/10 bg-ink-900/50 p-5">
-      <p class="text-xs text-slate-500">Last check</p>
-      <p class="mt-2 text-2xl font-semibold tabular-nums text-white">{m.last_ms ? `${m.last_ms} ms` : '—'}</p>
-      <p class="mt-1 text-xs text-slate-500">{ago(m.last_checked_at)}</p>
+    </div>
+    <div class={`${card} p-5 md:col-span-2 xl:col-span-1`}>
+      <div class="flex items-baseline justify-between text-sm">
+        <p class="text-slate-400">Last {bars.length} checks</p>
+        <p class="font-semibold tabular-nums text-white">{fmtUptime(barsUp)}</p>
+      </div>
+      <div class="mt-3"><UptimeBars history={bars} height="h-9" /></div>
+      <p class="mt-2 text-xs text-slate-500">Down is confirmed by 2 failed checks in a row</p>
     </div>
   </div>
 
-  <div class="mt-6 rounded-xl border border-white/10 bg-ink-900/50 p-5">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="font-semibold text-white">Domain & SSL</h2>
-      {expiryOn && <span class="text-xs text-slate-500">{expiryPending ? 'First check runs within a few minutes' : `Checked ${ago(m.expiry_checked_at)} · we alert 30, 14, 7 and 1 day before expiry`}</span>}
-    </div>
-    {!expiryOn ? (
-      <div class="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-white/10 px-4 py-4">
-        <p class="text-sm text-slate-400">Get warned 30, 14, 7 and 1 day before your SSL certificate or domain expires.</p>
-        <a href="/pricing" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Unlock with Pro</a>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div class="min-w-0 space-y-6">
+      <!-- Uptime periods -->
+      <div class={`${card} grid divide-y divide-white/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0`}>
+        {periods.map((p) => {
+          const tone = p.s.uptime == null ? 'text-slate-500' : p.s.uptime >= 99.9 ? 'text-brand' : p.s.uptime >= 99 ? 'text-amber-300' : 'text-red-400';
+          return (
+            <div class="p-5">
+              <p class="text-sm text-slate-400">{p.label}{p.note && <span class="text-slate-600"> · {p.note}</span>}</p>
+              <p class:list={['mt-2 text-2xl font-semibold tabular-nums', tone]}>{fmtUptime(p.s.uptime)}</p>
+              <p class="mt-1 text-xs text-slate-500">
+                {p.s.checks ? `${p.w.count} ${p.w.count === 1 ? 'incident' : 'incidents'} · ${p.w.down ? dur(p.w.down) : '0m'} down` : 'No data yet'}
+              </p>
+              {p.s.avgMs != null && <p class="text-xs text-slate-600">avg {p.s.avgMs} ms</p>}
+            </div>
+          );
+        })}
       </div>
-    ) : (
-    <div class="mt-4 grid gap-3 sm:grid-cols-2">
-      {expiryRows.map((r) => (
-        <div class="rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
-          <p class="text-xs text-slate-500">{r.label}</p>
-          {r.days != null ? (
-            <>
-              <p class:list={['mt-1 text-lg font-semibold tabular-nums', r.tone]}>{r.left}</p>
-              <p class="text-xs text-slate-500">Expires {r.date}{r.extra ? ` · ${r.extra}` : ''}</p>
-            </>
-          ) : (
-            <p class="mt-1 text-sm text-slate-400">{expiryPending ? 'Checking…' : r.na}</p>
-          )}
+
+      <!-- Response time -->
+      <div class={`${card} p-5`}>
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 class="font-semibold text-white">Response time</h2>
+          <span class="text-xs text-slate-500">{times.length ? `Last ${times.length} successful checks` : ''}</span>
         </div>
-      ))}
+        {pts.length > 1 ? (
+          <div class="mt-5 flex gap-3">
+            <div class="flex h-48 flex-col justify-between text-right text-[11px] tabular-nums text-slate-600">
+              <span>{top} ms</span><span>{top / 2} ms</span><span>0 ms</span>
+            </div>
+            <div class="relative h-48 flex-1" id="rt-chart" data-times={times.join(',')} data-top={top}>
+              <svg viewBox={`0 0 ${W} ${H}`} class="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="rt" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#22c55e" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                {[0, 0.5, 1].map((f) => <line x1="0" x2={W} y1={H * f} y2={H * f} stroke="rgb(255 255 255 / 0.06)" vector-effect="non-scaling-stroke" />)}
+                {avg && <line x1="0" x2={W} y1={H - (avg / top) * H} y2={H - (avg / top) * H} stroke="rgb(148 163 184 / 0.35)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke" />}
+                <path d={area} fill="url(#rt)" />
+                <path d={line} fill="none" stroke="#22c55e" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+              </svg>
+              <div data-cursor class="pointer-events-none absolute inset-y-0 hidden w-px bg-white/20"></div>
+              <div data-dot class="pointer-events-none absolute hidden size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-4 ring-brand/20"></div>
+              <div data-tip class="pointer-events-none absolute top-0 hidden -translate-x-1/2 -translate-y-full rounded-md border border-white/10 bg-ink-950 px-2 py-1 text-xs tabular-nums whitespace-nowrap text-white shadow-lg"></div>
+            </div>
+          </div>
+        ) : (
+          <div class="mt-5 grid h-48 place-items-center rounded-lg border border-dashed border-white/10 text-sm text-slate-500">The chart appears after the first few checks.</div>
+        )}
+        {rtStats.length > 0 && (
+          <div class="mt-5 grid grid-cols-3 divide-x divide-white/10 rounded-lg border border-white/10 bg-white/[0.02]">
+            {rtStats.map((s) => (
+              <div class="px-4 py-3">
+                <p class="flex items-center gap-1.5 text-lg font-semibold tabular-nums text-white">
+                  <svg viewBox="0 0 24 24" class:list={['size-4', s.cls]} fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={s.icon} /></svg>
+                  {s.v} ms
+                </p>
+                <p class="text-xs text-slate-500">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Incidents -->
+      <div class={card}>
+        <div class="flex items-center justify-between px-5 pt-5">
+          <h2 class="font-semibold text-white">Latest incidents</h2>
+          <a href="/dashboard#incidents" class="text-xs text-slate-400 hover:text-white">View all →</a>
+        </div>
+        {incidents.length === 0 ? (
+          <div class="flex items-center gap-3 p-5 text-sm text-slate-400">
+            <span class="grid size-8 place-items-center rounded-full bg-brand/10 text-brand"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg></span>
+            No incidents so far. Nice and steady.
+          </div>
+        ) : (
+          <ul class="mt-3 divide-y divide-white/5 text-sm">
+            {incidents.map((i) => (
+              <li class="flex items-center gap-3 px-5 py-3">
+                <span class:list={['size-2 shrink-0 rounded-full', i.resolved_at ? 'bg-brand' : 'bg-red-500 pulse-dot']}></span>
+                <div class="min-w-0 flex-1"><p class="truncate text-white">{i.cause}</p><p class="text-xs text-slate-500">{fmtDate(i.started_at)}</p></div>
+                <span class:list={['shrink-0 rounded-full px-2 py-0.5 text-xs', i.resolved_at ? 'bg-white/5 text-slate-300' : 'bg-red-500/15 text-red-300']}>
+                  {i.resolved_at ? `Down ${dur(i.resolved_at - i.started_at)}` : 'Ongoing'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-    )}
-  </div>
 
-  <div class="mt-6 rounded-xl border border-white/10 bg-ink-900/50 p-5">
-    <h2 class="font-semibold text-white">Response time</h2>
-    <p class="text-xs text-slate-500">{avg ? <>Average <span class="text-slate-300">{avg} ms</span> · min {Math.min(...times)} ms · max {Math.max(...times)} ms · last {times.length} checks</> : 'The chart appears after the first few checks.'}</p>
-    {pts.length > 1 ? (
-      <svg viewBox={`0 0 ${W} ${H}`} class="mt-5 h-44 w-full" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="rt" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#22c55e" stop-opacity="0.35" />
-            <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        {[0.25, 0.5, 0.75].map((f) => <line x1="0" x2={W} y1={H * f} y2={H * f} stroke="rgb(255 255 255 / 0.05)" />)}
-        <path d={area} fill="url(#rt)" />
-        <path d={line} fill="none" stroke="#22c55e" stroke-width="2" vector-effect="non-scaling-stroke" />
-      </svg>
-    ) : (
-      <div class="mt-5 grid h-44 place-items-center rounded-lg border border-dashed border-white/10 text-sm text-slate-500">Collecting data…</div>
-    )}
-  </div>
+    <!-- Sidebar -->
+    <aside class="space-y-6">
+      <div class={`${card} p-5`}>
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold text-white">Domain & SSL</h2>
+          {expiryOn && !expiryPending && <span class="text-xs text-slate-500">Checked {ago(m.expiry_checked_at)}</span>}
+        </div>
+        <div class="mt-4 space-y-4">
+          {expiryRows.map((r) => (
+            <div>
+              <p class="flex items-center gap-2 text-xs text-slate-500">
+                <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={r.icon} /></svg>{r.label}
+              </p>
+              {!expiryOn ? (
+                <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-300">
+                  <svg viewBox="0 0 24 24" class="size-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" /></svg>Locked
+                </p>
+              ) : r.days != null ? (
+                <>
+                  <p class:list={['mt-1 text-lg font-semibold tabular-nums', r.tone]}>{r.left}</p>
+                  <div class="mt-1.5 h-1 overflow-hidden rounded-full bg-white/5"><div class:list={['h-full rounded-full', r.bar]} style={`width:${Math.max(3, Math.min(100, (r.days / 90) * 100))}%`}></div></div>
+                  <p class="mt-1.5 text-xs text-slate-500">Expires {r.date}{r.extra ? ` · ${r.extra}` : ''}</p>
+                </>
+              ) : (
+                <p class="mt-1 text-sm text-slate-400">{expiryPending ? 'Checking…' : r.na}</p>
+              )}
+            </div>
+          ))}
+        </div>
+        {expiryOn ? (
+          <p class="mt-4 border-t border-white/10 pt-3 text-xs text-slate-500">{expiryPending ? 'First check runs within a few minutes.' : 'We alert you 30, 14, 7 and 1 day before expiry.'}</p>
+        ) : (
+          <>
+            <p class="mt-4 text-xs text-slate-500">Get warned 30, 14, 7 and 1 day before your SSL certificate or domain expires.</p>
+            <a href="/pricing" class="mt-3 block rounded-lg bg-brand py-2 text-center text-sm font-semibold text-ink-950 hover:bg-brand-soft">Unlock with Pro</a>
+          </>
+        )}
+      </div>
 
-  <div class="mt-6 rounded-xl border border-white/10 bg-ink-900/50 p-5">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="font-semibold text-white">Last 60 checks</h2>
-      <span class="text-xs text-slate-500">Grey = no data yet · down is confirmed by 2 failed checks in a row</span>
-    </div>
-    <div class="mt-4"><UptimeBars history={toBars(m.history)} height="h-10" /></div>
-  </div>
-
-  <div class="mt-6 rounded-xl border border-white/10 bg-ink-900/50 p-5">
-    <h2 class="font-semibold text-white">Incident history</h2>
-    {incidents.length === 0 ? <p class="mt-3 text-sm text-slate-400">No incidents. 🎉</p> : (
-      <ul class="mt-4 space-y-3 text-sm">
-        {incidents.map((i) => (
-          <li class="flex items-start justify-between gap-4">
-            <div><p class="text-white">{i.cause}</p><p class="text-xs text-slate-500">{fmtDate(i.started_at)}</p></div>
-            <span class:list={['shrink-0 rounded-full px-2 py-0.5 text-xs', i.resolved_at ? 'bg-brand/10 text-brand' : 'bg-red-500/15 text-red-300']}>
-              {i.resolved_at ? formatDuration(i.resolved_at - i.started_at) : 'Ongoing'}
-            </span>
-          </li>
-        ))}
-      </ul>
-    )}
+      <div class={`${card} p-5`}>
+        <h2 class="font-semibold text-white">Monitor details</h2>
+        <dl class="mt-4 space-y-3 text-sm">
+          <div class="flex justify-between gap-4"><dt class="text-slate-500">Type</dt><dd class="text-white">{m.type === 'keyword' ? 'Keyword' : 'HTTP/S'}</dd></div>
+          {m.type === 'keyword' && <div class="flex justify-between gap-4"><dt class="text-slate-500">Keyword</dt><dd class="truncate text-white">“{m.keyword}”</dd></div>}
+          <div class="flex justify-between gap-4"><dt class="text-slate-500">Host</dt><dd class="truncate text-white">{host}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-slate-500">Interval</dt><dd class="text-white">Every {intervalLabel(m.interval_sec)}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-slate-500">Created</dt><dd class="text-white">{new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</dd></div>
+        </dl>
+        <a href="/dashboard/alerts" class="mt-4 flex items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/5">Alert contacts<span aria-hidden="true">→</span></a>
+      </div>
+    </aside>
   </div>
 </Dashboard>
+
+<script>
+  const el = document.getElementById('rt-chart');
+  if (el) {
+    const times = el.dataset.times!.split(',').map(Number);
+    const top = Number(el.dataset.top);
+    const [cursor, dot, tip] = ['cursor', 'dot', 'tip'].map((k) => el.querySelector<HTMLElement>(`[data-${k}]`)!);
+    const show = (on: boolean) => [cursor, dot, tip].forEach((n) => n.classList.toggle('hidden', !on));
+    el.addEventListener('mousemove', (e) => {
+      const r = el.getBoundingClientRect();
+      const i = Math.round(((e.clientX - r.left) / r.width) * (times.length - 1));
+      const x = (i / (times.length - 1)) * r.width;
+      const y = r.height - (times[i] / top) * r.height;
+      cursor.style.left = `${x}px`;
+      dot.style.left = `${x}px`; dot.style.top = `${y}px`;
+      tip.style.left = `${Math.min(Math.max(x, 40), r.width - 40)}px`; tip.style.top = `${y - 10}px`;
+      tip.textContent = `${times[i]} ms`;
+      show(true);
+    });
+    el.addEventListener('mouseleave', () => show(false));
+  }
+</script>

@@ -1,0 +1,50 @@
+---
+// Styled replacement for window.confirm(). Add data-confirm="message" (and optional data-confirm-title)
+// to a <form> or a submit <button>; the action only runs after the user clicks Delete.
+---
+<dialog id="confirm-dialog" class="m-auto w-[min(26rem,calc(100%-2rem))] rounded-2xl border border-white/10 bg-ink-900 p-0 text-slate-300 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm">
+  <div class="p-6">
+    <span class="grid size-11 place-items-center rounded-full bg-red-500/15 text-red-400">
+      <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+    </span>
+    <h2 data-title class="mt-4 text-lg font-semibold text-white">Are you sure?</h2>
+    <p data-message class="mt-1.5 text-sm text-slate-400"></p>
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" data-cancel class="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/5">Cancel</button>
+      <button type="button" data-ok class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400">Delete</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dlg = document.getElementById('confirm-dialog') as HTMLDialogElement | null;
+  if (dlg) {
+    let proceed: (() => void) | null = null;
+    const ask = (el: HTMLElement, onOk: () => void) => {
+      dlg.querySelector('[data-title]')!.textContent = el.dataset.confirmTitle || 'Are you sure?';
+      dlg.querySelector('[data-message]')!.textContent = el.dataset.confirm || '';
+      proceed = onOk;
+      dlg.showModal();
+      (dlg.querySelector('[data-cancel]') as HTMLButtonElement).focus();
+    };
+    dlg.querySelector('[data-cancel]')!.addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    dlg.querySelector('[data-ok]')!.addEventListener('click', () => { dlg.close(); proceed?.(); });
+
+    // Buttons with data-confirm (submit with that button's name/value).
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-confirm]');
+      if (!btn || !btn.form) return;
+      e.preventDefault();
+      ask(btn, () => btn.form!.requestSubmit(btn));
+    }, true);
+    // Forms with data-confirm.
+    document.addEventListener('submit', (e) => {
+      const form = e.target as HTMLFormElement;
+      if (!form.dataset.confirm || form.dataset.confirmed) return;
+      e.preventDefault();
+      const submitter = (e as SubmitEvent).submitter as HTMLButtonElement | null;
+      ask(form, () => { form.dataset.confirmed = '1'; form.requestSubmit(submitter ?? undefined); });
+    });
+  }
+</script>

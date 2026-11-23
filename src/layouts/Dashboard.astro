@@ -2,6 +2,7 @@
 import Base from './Base.astro';
 import Logo from '../components/Logo.astro';
 import UpgradeModal from '../components/dash/UpgradeModal.astro';
+import ConfirmDialog from '../components/dash/ConfirmDialog.astro';
 import { env } from 'cloudflare:workers';
 import { countMonitors } from '../lib/data';
 
@@ -67,9 +68,13 @@ const nav = [
 
       <main class="mx-auto max-w-6xl px-4 sm:px-8 py-8">
         <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-white">{title}</h1>
-            {subtitle && <p class="mt-1 text-sm text-slate-400">{subtitle}</p>}
+          <div class="flex min-w-0 items-center gap-4">
+            <slot name="icon" />
+            <div class="min-w-0">
+              <h1 class="truncate text-2xl font-semibold tracking-tight text-white">{title}</h1>
+              {subtitle && <p class="mt-1 text-sm text-slate-400">{subtitle}</p>}
+              <slot name="meta" />
+            </div>
           </div>
           <slot name="actions" />
         </div>
@@ -78,4 +83,5 @@ const nav = [
     </div>
   </div>
   <UpgradeModal />
+  <ConfirmDialog />
 </Base>

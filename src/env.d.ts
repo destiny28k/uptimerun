@@ -16,7 +16,7 @@ interface Env {
 
 declare namespace App {
   interface Locals {
-    user: { id: string; name: string; email: string } | null;
+    user: { id: string; name: string; email: string; image?: string | null; emailVerified?: boolean; createdAt?: Date | string } | null;
     plan: { id: import('./lib/plans').PlanId; limits: import('./lib/plans').PlanLimits } | null;
   }
 }
