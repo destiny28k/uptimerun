@@ -10,3 +10,9 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 # Local dev URL (overrides the production value in wrangler.jsonc)
 APP_URL=http://localhost:4330
+
+# Dodo Payments (test mode first)
+DODO_API_KEY=dodo_test_N28z3khAFACn7OQl.uK_9Klk6nBQ0FLkrR9Ydbh-3T3-TP3SH_FZvfW_jyxp_QnXM
+DODO_WEBHOOK_SECRET=
+DODO_MODE=test
+DODO_PRODUCTS={"pro_monthly":"","pro_yearly":"","business_monthly":"","business_yearly":""}

@@ -42,7 +42,7 @@ const rank = { free: 0, pro: 1, business: 2 } as const;
             {isCurrent || isLower ? (
               <button type="button" disabled class="mt-5 w-full cursor-not-allowed rounded-lg border border-white/10 py-2.5 text-sm font-semibold text-slate-500">{isCurrent ? 'Your current plan' : 'Included in your plan'}</button>
             ) : (
-              <a data-subscribe={p.id} href={`mailto:${SITE.email}?subject=${encodeURIComponent(`Upgrade to ${p.name}`)}`}
+              <a data-subscribe={p.id} href={`/api/billing/checkout?plan=${p.id}&billing=yearly`}
                 class:list={['mt-5 block w-full rounded-lg py-2.5 text-center text-sm font-semibold transition-colors', p.featured ? 'bg-brand text-ink-950 hover:bg-brand-soft' : 'bg-white text-ink-950 hover:bg-slate-200']}>
                 Upgrade to {p.name}
               </a>
@@ -74,7 +74,7 @@ const rank = { free: 0, pro: 1, business: 2 } as const;
       });
       modal.querySelectorAll<HTMLElement>('[data-price-monthly]').forEach((el) => (el.textContent = el.dataset[b === 'yearly' ? 'priceYearly' : 'priceMonthly']!));
       modal.querySelectorAll<HTMLElement>('[data-note-monthly]').forEach((el) => (el.textContent = el.dataset[b === 'yearly' ? 'noteYearly' : 'noteMonthly']!));
-      modal.dataset.billing = b; // read by checkout later
+      modal.querySelectorAll<HTMLAnchorElement>('[data-subscribe]').forEach((a) => (a.href = `/api/billing/checkout?plan=${a.dataset.subscribe}&billing=${b}`));
     };
     setBilling('yearly');
     modal.querySelectorAll<HTMLElement>('.billing-btn').forEach((btn) => btn.addEventListener('click', () => setBilling(btn.dataset.billing as 'monthly' | 'yearly')));

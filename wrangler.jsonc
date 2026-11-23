@@ -30,7 +30,9 @@
   // Production values. Local dev overrides APP_URL in .dev.vars.
   "vars": {
     "APP_URL": "https://uptimerun.com",
-    "EMAIL_FROM": "UptimeRun <alerts@uptimerun.com>"
+    "EMAIL_FROM": "UptimeRun <alerts@uptimerun.com>",
+    "DODO_MODE": "test",
+    "DODO_PRODUCTS": "{\"pro_monthly\":\"pdt_0Nsb0vTUgthfOJaSSSiDN\",\"pro_yearly\":\"pdt_0Nsb0vWHiPRvGU1GEAUeP\",\"business_monthly\":\"pdt_0Nsb0vb36YYgn9ggI9nUK\",\"business_yearly\":\"pdt_0Nsb0vdmJybCO6xUGsR6h\"}"
   }
   // Secrets (set with `wrangler secret put`, or in .dev.vars locally):
   //   BETTER_AUTH_SECRET, RESEND_API_KEY, TELEGRAM_BOT_TOKEN, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
