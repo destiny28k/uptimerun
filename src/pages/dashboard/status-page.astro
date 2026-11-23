@@ -1,0 +1,135 @@
+---
+// Edit one status page: name, address, description and which monitors it shows.
+import { env } from 'cloudflare:workers';
+import Dashboard from '../../layouts/Dashboard.astro';
+import StatusDot from '../../components/dash/StatusDot.astro';
+import { slugError, slugify, type StatusPageRow } from '../../lib/statusPage';
+import type { Status } from '../../data/mock';
+
+const user = Astro.locals.user!;
+const id = Astro.url.searchParams.get('id') ?? '';
+const page = await env.DB.prepare(`SELECT * FROM status_pages WHERE id = ? AND user_id = ?`).bind(id, user.id).first<StatusPageRow>();
+if (!page) return Astro.redirect('/dashboard/status-pages');
+
+let error = '';
+let values = { title: page.title, slug: page.slug, description: page.description ?? '' };
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  if (f.get('action') === 'delete') {
+    await env.DB.prepare(`DELETE FROM status_pages WHERE id = ? AND user_id = ?`).bind(id, user.id).run();
+    return Astro.redirect('/dashboard/status-pages', 303);
+  }
+  values = {
+    title: String(f.get('title') ?? '').trim().slice(0, 60),
+    slug: slugify(String(f.get('slug') ?? '')),
+    description: String(f.get('description') ?? '').trim().slice(0, 300),
+  };
+  const chosen = f.getAll('monitors').map(String);
+  const taken = values.slug !== page.slug
+    && await env.DB.prepare(`SELECT 1 FROM status_pages WHERE slug = ?`).bind(values.slug).first();
+
+  if (!values.title) error = 'Give your status page a name.';
+  else if (slugError(values.slug)) error = slugError(values.slug)!;
+  else if (taken) error = `The address “${values.slug}” is already taken. Try another.`;
+  else {
+    // Only accept monitors that belong to this user.
+    const { results: owned } = await env.DB.prepare(`SELECT id FROM monitors WHERE user_id = ?`).bind(user.id).all<{ id: string }>();
+    const ownedIds = new Set(owned.map((o) => o.id));
+    const keep = chosen.filter((m) => ownedIds.has(m));
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE status_pages SET title = ?, slug = ?, description = ? WHERE id = ? AND user_id = ?`)
+        .bind(values.title, values.slug, values.description || null, id, user.id),
+      env.DB.prepare(`DELETE FROM status_page_monitors WHERE page_id = ?`).bind(id),
+      ...keep.map((m, i) => env.DB.prepare(`INSERT INTO status_page_monitors (page_id, monitor_id, position) VALUES (?, ?, ?)`).bind(id, m, i)),
+    ]);
+    return Astro.redirect(`/dashboard/status-page?id=${id}&saved=1`, 303);
+  }
+}
+
+const { results: monitors } = await env.DB.prepare(
+  `SELECT m.id, m.name, m.url, m.status, spm.monitor_id IS NOT NULL AS shown
+   FROM monitors m LEFT JOIN status_page_monitors spm ON spm.monitor_id = m.id AND spm.page_id = ?
+   WHERE m.user_id = ? ORDER BY COALESCE(spm.position, 9999), m.created_at`,
+).bind(id, user.id).all<{ id: string; name: string; url: string; status: Status; shown: number }>();
+
+const host = Astro.url.host;
+const publicUrl = `${Astro.url.origin}/s/${page.slug}`;
+const notice = Astro.url.searchParams.get('created') ? 'Your status page is live! Share the link below with your customers.' : Astro.url.searchParams.get('saved') ? 'Changes saved. Your public page is updated.' : '';
+const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50';
+---
+<Dashboard title={page.title} active="status" subtitle="Edit your public status page.">
+  <a slot="actions" href={`/s/${page.slug}`} target="_blank" rel="noopener" class="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10">View page ↗</a>
+
+  {notice && <p class="mb-6 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-brand">{notice}</p>}
+
+  <!-- Share link -->
+  <div class="mb-8 flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-ink-900/50 p-4">
+    <span class="text-sm text-slate-400">Public link</span>
+    <code id="public-url" class="min-w-0 flex-1 truncate rounded-md bg-white/[0.04] px-3 py-2 text-sm text-white">{publicUrl}</code>
+    <button type="button" id="copy-url" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Copy link</button>
+  </div>
+
+  <form method="post" class="max-w-3xl space-y-8">
+    {error && <p class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+
+    <div class="grid gap-5 sm:grid-cols-2">
+      <div>
+        <label for="title" class="mb-2 block text-sm font-medium text-white">Page name</label>
+        <input id="title" name="title" required maxlength="60" value={values.title} class={input} />
+      </div>
+      <div>
+        <label for="slug" class="mb-2 block text-sm font-medium text-white">Address</label>
+        <div class="flex items-center overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] focus-within:border-brand/50">
+          <span class="shrink-0 pl-3 text-sm text-slate-500">{host}/s/</span>
+          <input id="slug" name="slug" required maxlength="40" value={values.slug} class="w-full bg-transparent px-1 py-2.5 text-sm text-white outline-none" />
+        </div>
+      </div>
+      <div class="sm:col-span-2">
+        <label for="description" class="mb-2 block text-sm font-medium text-white">Short message <span class="font-normal text-slate-500">(optional)</span></label>
+        <textarea id="description" name="description" rows="2" maxlength="300" class={input} placeholder="Live status of the My Shop website and checkout.">{values.description}</textarea>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend class="mb-1 block text-sm font-medium text-white">Services shown on this page</legend>
+      <p class="mb-3 text-xs text-slate-500">Tick the monitors your customers should see. They appear in this order.</p>
+      {monitors.length === 0 ? (
+        <p class="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-400">You have no monitors yet. <a href="/dashboard/new" class="text-brand hover:text-brand-soft">Add one</a> and it can appear here.</p>
+      ) : (
+        <div class="divide-y divide-white/5 rounded-xl border border-white/10">
+          {monitors.map((m) => (
+            <label class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02]">
+              <input type="checkbox" name="monitors" value={m.id} checked={!!m.shown} class="size-4 accent-[#22c55e]" />
+              <StatusDot status={m.status} />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm text-white">{m.name}</span>
+                <span class="block truncate text-xs text-slate-500">{m.url}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+    </fieldset>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-6">
+      <div class="flex gap-3">
+        <button class="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Save changes</button>
+        <a href="/dashboard/status-pages" class="rounded-lg border border-white/10 px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">Back</a>
+      </div>
+      <button name="action" value="delete" formnovalidate onclick="return confirm('Delete this status page? Its link will stop working.')"
+        class="rounded-lg border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-300 hover:bg-red-500/10">Delete page</button>
+    </div>
+  </form>
+
+  <p class="mt-8 text-xs text-slate-500">Custom domains (like status.yourshop.com) are coming with Pro.</p>
+</Dashboard>
+
+<script>
+  document.getElementById('copy-url')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    await navigator.clipboard.writeText(document.getElementById('public-url')!.textContent!.trim());
+    btn.textContent = 'Copied!';
+    setTimeout(() => (btn.textContent = 'Copy link'), 1500);
+  });
+</script>

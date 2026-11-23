@@ -1,0 +1,33 @@
+---
+// A real public status page: /s/<slug>
+import { env } from 'cloudflare:workers';
+import Base from '../../layouts/Base.astro';
+import StatusPageView from '../../components/status/StatusPageView.astro';
+import { loadStatusPage, type StatusPageRow } from '../../lib/statusPage';
+
+const slug = (Astro.params.slug ?? '').toLowerCase();
+const page = await env.DB.prepare(`SELECT * FROM status_pages WHERE slug = ?`).bind(slug).first<StatusPageRow>();
+if (!page) {
+  Astro.response.status = 404;
+}
+const data = page ? await loadStatusPage(env.DB, page, Astro.url.origin) : null;
+// Short cache: fresh enough for visitors, light on the database.
+if (data) Astro.response.headers.set('cache-control', 'public, max-age=30');
+---
+<Base title={data ? `${data.title} Status` : 'Status page not found'}>
+  {data ? (
+    <>
+      <meta http-equiv="refresh" content="60" />
+      <StatusPageView data={data} />
+    </>
+  ) : (
+    <div class="grid min-h-screen place-items-center px-4 text-center">
+      <div>
+        <p class="text-sm font-semibold text-brand">404</p>
+        <h1 class="mt-2 text-2xl font-semibold text-white">This status page doesn’t exist</h1>
+        <p class="mt-2 text-sm text-slate-400">Check the address, or create your own free status page.</p>
+        <a href="/" class="mt-6 inline-flex rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Go to homepage</a>
+      </div>
+    </div>
+  )}
+</Base>

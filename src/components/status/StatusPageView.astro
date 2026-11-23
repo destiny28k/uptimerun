@@ -1,0 +1,153 @@
+---
+// The public status page layout. Used by the demo (/status/demo) and real pages (/s/<slug>).
+import Logo from '../Logo.astro';
+import type { StatusPageData } from '../../lib/statusPage';
+
+interface Props { data: StatusPageData }
+const { data } = Astro.props;
+
+const overallStyle = {
+  ok: { box: 'border-brand/30 from-brand/[0.12] via-brand/[0.04]', dot: 'bg-brand', ping: 'bg-brand/40', icon: 'M20 6 9 17l-5-5' },
+  partial: { box: 'border-amber-400/30 from-amber-400/[0.12] via-amber-400/[0.04]', dot: 'bg-amber-400', ping: 'bg-amber-400/40', icon: 'M12 8v5M12 16h.01' },
+  major: { box: 'border-red-500/30 from-red-500/[0.12] via-red-500/[0.04]', dot: 'bg-red-500', ping: 'bg-red-500/40', icon: 'M12 8v5M12 16h.01' },
+  empty: { box: 'border-white/10 from-white/[0.04] via-transparent', dot: 'bg-slate-500', ping: 'bg-slate-500/40', icon: 'M12 8v5M12 16h.01' },
+}[data.overall.state];
+
+const serviceIcon = { up: 'text-brand', down: 'text-red-400', pending: 'text-slate-500' };
+const barColor = (up: number | null) =>
+  up == null ? 'bg-white/[0.07]' : up >= 99.9 ? 'bg-brand/80' : up >= 99 ? 'bg-amber-400/90' : 'bg-red-500/90';
+const statusTone: Record<string, string> = {
+  Resolved: 'bg-brand/15 text-brand', Completed: 'bg-sky-500/15 text-sky-300',
+  Identified: 'bg-amber-400/15 text-amber-300', Investigating: 'bg-red-500/15 text-red-300', Ongoing: 'bg-red-500/15 text-red-300',
+};
+const days = data.groups[0]?.services[0]?.days.length ?? 90;
+const initials = data.title.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+---
+<div class="relative overflow-hidden">
+  <div class="grid-bg absolute inset-0 pointer-events-none"></div>
+  <div class="glow absolute inset-0 pointer-events-none"></div>
+
+  <div class="relative mx-auto max-w-4xl px-4 sm:px-6">
+    <header class="flex items-center justify-between gap-4 py-8">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-white to-slate-300 text-sm font-bold text-ink-950 shadow-lg">{initials}</span>
+        <div class="min-w-0">
+          <p class="truncate font-semibold text-white">{data.title}</p>
+          <p class="truncate text-xs text-slate-500">{data.subtitle}</p>
+        </div>
+      </div>
+    </header>
+
+    {data.description && <p class="-mt-3 mb-6 max-w-2xl text-sm text-slate-400">{data.description}</p>}
+
+    <section class:list={['rounded-2xl border bg-gradient-to-br to-transparent p-6 sm:p-8', overallStyle.box]}>
+      <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4">
+          <span class:list={['relative grid size-12 shrink-0 place-items-center rounded-full text-ink-950', overallStyle.dot]}>
+            <span class:list={['absolute inset-0 animate-ping rounded-full motion-reduce:hidden', overallStyle.ping]}></span>
+            <svg viewBox="0 0 24 24" class="relative size-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d={overallStyle.icon}/></svg>
+          </span>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-semibold text-white">{data.overall.label}</h1>
+            <p class="text-sm text-slate-400">{data.overall.note}</p>
+          </div>
+        </div>
+        <dl class="grid grid-cols-3 gap-6 text-center sm:text-right">
+          <div><dt class="text-xs text-slate-500">Uptime ({days}d)</dt><dd class="mt-1 text-lg font-semibold tabular-nums text-white">{data.stats.uptime}</dd></div>
+          <div><dt class="text-xs text-slate-500">Avg response</dt><dd class="mt-1 text-lg font-semibold tabular-nums text-white">{data.stats.avgMs}</dd></div>
+          <div><dt class="text-xs text-slate-500">Incidents</dt><dd class="mt-1 text-lg font-semibold tabular-nums text-white">{data.stats.incidents}</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <div class="mt-10 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-lg font-semibold text-white">Services</h2>
+      <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-brand/80"></span>Up</span>
+        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-amber-400/90"></span>Partial</span>
+        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-red-500/90"></span>Outage</span>
+        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm bg-white/[0.07]"></span>No data</span>
+      </div>
+    </div>
+
+    {data.groups.length === 0 ? (
+      <p class="mt-4 rounded-2xl border border-white/10 bg-ink-900/60 px-5 py-8 text-center text-sm text-slate-400">No services added to this page yet.</p>
+    ) : (
+      <div class="mt-4 space-y-5">
+        {data.groups.map((g) => (
+          <section class="overflow-hidden rounded-2xl border border-white/10 bg-ink-900/60 backdrop-blur">
+            {g.name && <p class="border-b border-white/5 bg-white/[0.02] px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{g.name}</p>}
+            <div class="divide-y divide-white/5">
+              {g.services.map((s) => (
+                <div class="px-5 py-5">
+                  <div class="flex items-center justify-between gap-3 text-sm">
+                    <span class="flex min-w-0 items-center gap-2 font-medium text-white">
+                      {s.status === 'down' ? (
+                        <svg viewBox="0 0 24 24" class:list={['size-4 shrink-0', serviceIcon[s.status]]} fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" class:list={['size-4 shrink-0', serviceIcon[s.status]]} fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      )}
+                      <span class="truncate">{s.name}</span>
+                      {s.status === 'down' && <span class="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-300">Down</span>}
+                    </span>
+                    <span class="shrink-0 text-xs tabular-nums text-slate-400"><span class="text-slate-200">{s.uptime}</span> uptime</span>
+                  </div>
+                  <!-- All days on desktop, last 45 on phones -->
+                  <div class="mt-3 flex h-9 items-stretch gap-[2px]">
+                    {s.days.map((d, i) => (
+                      <span class:list={['group/bar relative flex-1 rounded-[2px] transition-opacity hover:opacity-70', barColor(d.up), i < s.days.length - 45 && 'hidden sm:block']}>
+                        <span class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-ink-800 px-2 py-1 text-[11px] text-white shadow-xl group-hover/bar:block">
+                          {d.date} · {d.up == null ? 'No data' : d.up >= 100 ? 'No downtime' : `${d.up.toFixed(2)}% uptime`}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  <div class="mt-2 flex justify-between text-[11px] text-slate-600">
+                    <span><span class="hidden sm:inline">{s.days.length}</span><span class="sm:hidden">{Math.min(45, s.days.length)}</span> days ago</span><span>Today</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    )}
+
+    <h2 class="mt-14 text-lg font-semibold text-white">Past incidents</h2>
+    <div class="mt-4 space-y-4">
+      {data.incidents.map((inc) => (
+        <article class="rounded-2xl border border-white/10 bg-ink-900/60 p-5 sm:p-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-500">{inc.date} · {inc.duration}</p>
+              <h3 class="mt-1 font-semibold text-white">{inc.title}</h3>
+            </div>
+            <span class:list={['rounded-full px-2.5 py-1 text-xs font-medium', inc.impact === 'Maintenance' ? 'bg-sky-500/15 text-sky-300' : inc.impact === 'Major' ? 'bg-red-500/15 text-red-300' : 'bg-amber-400/15 text-amber-300']}>{inc.impact}</span>
+          </div>
+          <ol class="mt-5 space-y-4 border-l border-white/10 pl-5">
+            {inc.updates.map((u) => (
+              <li class="relative">
+                <span class="absolute -left-[25px] top-1.5 size-2.5 rounded-full border-2 border-ink-900 bg-slate-500"></span>
+                <p class="text-sm"><span class:list={['mr-2 rounded px-1.5 py-0.5 text-xs font-semibold', statusTone[u.status] ?? 'bg-white/10 text-slate-300']}>{u.status}</span><span class="text-xs text-slate-500">{u.time}</span></p>
+                <p class="mt-1.5 text-sm text-slate-300">{u.text}</p>
+              </li>
+            ))}
+          </ol>
+        </article>
+      ))}
+      <p class="text-center text-sm text-slate-500">{data.incidents.length ? `No other incidents in the last ${days} days.` : `No incidents in the last ${days} days. 🎉`}</p>
+    </div>
+
+    <footer class="mt-16 flex flex-col items-center gap-3 border-t border-white/5 py-10 text-center">
+      {data.branding ? (
+        <>
+          <p class="text-xs text-slate-500">Powered by</p>
+          <Logo />
+          <a href="/signup" class="text-sm font-medium text-brand hover:text-brand-soft">Get a free status page for your site →</a>
+        </>
+      ) : (
+        <p class="text-xs text-slate-600">{data.title}</p>
+      )}
+    </footer>
+  </div>
+</div>
