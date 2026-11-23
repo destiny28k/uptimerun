@@ -22,5 +22,10 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
     if (PROTECTED.test(path)) ctx.locals.plan = await getPlan(env.DB, ctx.locals.user!.id);
     if (GUEST_ONLY.test(path) && ctx.locals.user) return ctx.redirect('/dashboard');
   }
-  return next();
+  const res = await next();
+  // Keep private areas and any non-canonical host (e.g. *.workers.dev) out of search results.
+  if (/^\/(dashboard|api|login|signup)(\/|$)/.test(path) || !/(^|\.)uptimerun\.com$|^localhost$/.test(ctx.url.hostname)) {
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+  return res;
 });

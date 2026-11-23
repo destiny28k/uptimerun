@@ -1,0 +1,73 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { SITE } from '../site';
+---
+<LegalPage title="Privacy Policy · UptimeRun" heading="Privacy Policy" path="/privacy" updated="23 November 2026"
+  description="How UptimeRun collects, uses and protects your data: account details, monitored websites, alert contacts, cookies and analytics.">
+  <p>
+    This policy explains what information {SITE.name} (“we”, “us”) collects when you use {SITE.url.replace('https://', '')} and our uptime monitoring service, how we use it, and your choices. We keep data collection to what’s needed to run the service, and we never sell your personal data.
+  </p>
+
+  <h2>Information we collect</h2>
+  <ul>
+    <li><strong>Account details:</strong> your email address and, if you sign in with Google or GitHub, your name and profile picture from that account.</li>
+    <li><strong>Monitoring data:</strong> the website addresses you add, your settings (check interval, keyword, timeout), and the results of our checks, such as status, response time, incidents, SSL certificate and domain expiry dates.</li>
+    <li><strong>Alert contacts:</strong> email addresses, Telegram chat IDs and Slack or Discord webhook addresses you add to receive alerts.</li>
+    <li><strong>Status pages:</strong> the name, address, message and monitors you choose to show publicly.</li>
+    <li><strong>Billing:</strong> if you buy a paid plan, our payment provider processes your payment. We receive your plan, billing status and a customer reference, but never your full card details.</li>
+    <li><strong>Usage and technical data:</strong> basic logs (IP address, browser, pages visited) to keep the service secure and working, and anonymous analytics about how our website is used.</li>
+  </ul>
+
+  <h2>How we use your information</h2>
+  <ul>
+    <li>To provide the service: run checks, record results, send alerts and show your status pages.</li>
+    <li>To send service emails such as sign-in links, alerts and important account or billing notices.</li>
+    <li>To keep the service secure, prevent abuse and fix problems.</li>
+    <li>To understand how our website is used and improve it.</li>
+  </ul>
+
+  <h2>Cookies and analytics</h2>
+  <p>
+    We use a necessary cookie to keep you signed in. We may use Google Analytics to understand website traffic; it uses cookies to collect anonymous usage data such as pages visited and device type. You can block cookies in your browser settings, but signing in requires the session cookie.
+  </p>
+
+  <h2>Service providers we use</h2>
+  <ul>
+    <li><strong>Cloudflare:</strong> hosting, database and network security.</li>
+    <li><strong>Google and GitHub:</strong> optional sign-in.</li>
+    <li><strong>Email delivery provider:</strong> to send sign-in links and alerts.</li>
+    <li><strong>Telegram, Slack and Discord:</strong> only when you add them as alert contacts.</li>
+    <li><strong>Payment provider (merchant of record):</strong> processes payments, taxes and invoices for paid plans.</li>
+    <li><strong>Google Analytics:</strong> anonymous website analytics.</li>
+  </ul>
+  <p>These providers only receive the data they need to perform their service for us.</p>
+
+  <h2>Public information</h2>
+  <p>
+    Status pages are public by design. Anything you choose to show on a status page, including monitor names and uptime history, can be seen by anyone with the link. Don’t include private information in monitor or page names.
+  </p>
+
+  <h2>Data retention and deletion</h2>
+  <p>
+    We keep your data while your account is active. Check history is kept for the period included in your plan. You can delete monitors, alert contacts and status pages at any time, and you can ask us to delete your account and its data by emailing <a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Billing records may be kept longer where the law requires it.
+  </p>
+
+  <h2>Security</h2>
+  <p>
+    All traffic is encrypted with HTTPS, sign-in uses secure session cookies and single-use, time-limited sign-in links, and access to data is restricted to what’s needed to run the service. No system is perfectly secure, but we work hard to protect your data.
+  </p>
+
+  <h2>Your rights</h2>
+  <p>
+    Depending on where you live, you may have the right to access, correct, export or delete your personal data, or to object to some processing. Email us and we’ll help.
+  </p>
+
+  <h2>Children</h2>
+  <p>{SITE.name} is not intended for children under 16, and we don’t knowingly collect their data.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>We may update this policy. We’ll change the date at the top, and tell you by email about important changes.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about privacy? Email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+</LegalPage>

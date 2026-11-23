@@ -2,19 +2,46 @@
 import Base from '../layouts/Base.astro';
 import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.astro';
-import Features from '../components/Features.astro';
 import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features.astro';
 import Pricing from '../components/Pricing.astro';
+import SeoContent from '../components/SeoContent.astro';
 import Faq from '../components/Faq.astro';
 import Footer from '../components/Footer.astro';
+import { SITE } from '../site';
+import { PLANS } from '../data/plans';
+import { HOME_FAQ } from '../data/faq';
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: SITE.name,
+    url: SITE.url,
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Web',
+    description: SITE.description,
+    offers: PLANS.map((p) => ({ '@type': 'Offer', name: p.name, price: String(p.monthly), priceCurrency: 'USD' })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: HOME_FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  },
+];
 ---
-<Base>
+<Base
+  title="Free Website Uptime Monitoring & Status Pages | UptimeRun"
+  description="Free uptime monitor for your website: checks every minute, instant down alerts by email, Telegram, Slack & Discord, SSL expiry warnings and status pages."
+  jsonLd={jsonLd}
+>
   <Navbar />
   <main>
     <Hero />
     <HowItWorks />
     <Features />
     <Pricing />
+    <SeoContent />
     <Faq />
   </main>
   <Footer />

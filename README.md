@@ -1,4 +1,4 @@
-# Upbeat: uptime monitoring
+# UptimeRun: uptime monitoring
 
 Astro + Tailwind, hosted on Cloudflare Workers with a D1 database.
 

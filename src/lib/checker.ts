@@ -36,7 +36,7 @@ export async function checkUrl(m: CheckInput): Promise<Result> {
     method,
     redirect: m.follow_redirects === 0 ? 'manual' : 'follow',
     signal,
-    headers: { 'user-agent': 'UpbeatMonitor/1.0 (uptime check)' },
+    headers: { 'user-agent': 'UptimeRunBot/1.0 (+https://uptimerun.com)' },
   });
   try {
     // Keyword checks need the page body; otherwise HEAD is lighter.

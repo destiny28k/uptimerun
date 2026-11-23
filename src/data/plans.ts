@@ -17,12 +17,12 @@ export const PLANS: Plan[] = [
     highlights: ['10 monitors', '5-minute checks', 'Email, Telegram, Slack & Discord alerts', '1 status page', '3 months of history', 'Commercial use allowed'],
   },
   {
-    id: 'pro', name: 'Pro', monthly: 10, yearly: 96, cta: 'Start 14-day free trial', featured: true,
+    id: 'pro', name: 'Pro', monthly: 10, yearly: 96, cta: 'Get Pro', featured: true,
     blurb: 'For businesses that can’t afford downtime.',
     highlights: ['50 monitors', '1-minute checks', 'SSL & domain expiry alerts', '3 status pages on your own domain', '12 months of history', 'Everything in Free'],
   },
   {
-    id: 'business', name: 'Business', monthly: 20, yearly: 192, cta: 'Start 14-day free trial',
+    id: 'business', name: 'Business', monthly: 20, yearly: 192, cta: 'Get Business',
     blurb: 'For agencies and teams with many sites.',
     highlights: ['200 monitors', '30-second checks', 'Unlimited status pages, no branding', '3 team members', '24 months of history', 'Everything in Pro'],
   },

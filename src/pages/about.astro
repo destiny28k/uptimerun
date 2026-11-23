@@ -1,0 +1,25 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { SITE } from '../site';
+---
+<LegalPage title="About UptimeRun: Simple, Fair Uptime Monitoring" heading="About UptimeRun" path="/about"
+  description="UptimeRun is a simple, affordable website uptime monitoring service with instant alerts and public status pages, built for small businesses and freelancers.">
+  <p>
+    <strong>{SITE.name}</strong> is a website uptime monitoring service. We check your websites around the clock and tell you the moment something goes wrong, by email, Telegram, Slack or Discord, and we give you a public status page to keep your customers informed.
+  </p>
+  <h2>Why we built it</h2>
+  <p>
+    Uptime monitoring shouldn’t be expensive or complicated. Small businesses, online shops, freelancers and agencies need the same peace of mind as large companies, without enterprise pricing or a long setup. So we built a monitor that takes 30 seconds to set up, includes every alert channel on every plan, and has a genuinely useful free plan that allows commercial use.
+  </p>
+  <h2>What we believe</h2>
+  <ul>
+    <li><strong>Simple:</strong> paste your website address and you’re monitoring.</li>
+    <li><strong>Fair pricing:</strong> clear plans, no surprise fees, and a free plan you can actually use.</li>
+    <li><strong>No false alarms:</strong> we re-check before alerting, so an alert means something is really wrong.</li>
+    <li><strong>Privacy:</strong> we only collect what we need to run the service, and we never sell your data.</li>
+  </ul>
+  <h2>Get in touch</h2>
+  <p>
+    Questions, feedback or feature ideas? Email us at <a href={`mailto:${SITE.email}`}>{SITE.email}</a> or visit our <a href="/contact">contact page</a>. We read every message.
+  </p>
+</LegalPage>

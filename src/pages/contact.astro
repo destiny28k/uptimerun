@@ -1,0 +1,19 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { SITE } from '../site';
+---
+<LegalPage title="Contact UptimeRun: Support & Questions" heading="Contact us" path="/contact"
+  description="Contact the UptimeRun team for support, billing questions, refunds or feedback. We usually reply within one business day.">
+  <p>We’re happy to help with anything: setting up monitors, alerts, status pages, billing or refunds.</p>
+  <div class="not-prose my-8 rounded-2xl border border-brand/30 bg-brand/[0.06] p-6">
+    <p class="text-sm text-slate-400">Email</p>
+    <a href={`mailto:${SITE.email}`} class="mt-1 block text-2xl font-semibold text-white hover:text-brand">{SITE.email}</a>
+    <p class="mt-2 text-sm text-slate-400">We usually reply within one business day.</p>
+  </div>
+  <h2>Before you write</h2>
+  <ul>
+    <li><strong>Not getting alerts?</strong> Open your monitor and click <em>Send test alert</em>, and check your spam folder for email alerts.</li>
+    <li><strong>Billing or refund?</strong> Include the email address on your account so we can find it quickly. See our <a href="/refund-policy">refund policy</a>.</li>
+    <li><strong>Found a bug?</strong> Tell us what you did, what you expected, and what happened instead.</li>
+  </ul>
+</LegalPage>

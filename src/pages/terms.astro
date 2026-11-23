@@ -1,0 +1,73 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { SITE } from '../site';
+---
+<LegalPage title="Terms of Service · UptimeRun" heading="Terms of Service" path="/terms" updated="23 November 2026"
+  description="The terms for using UptimeRun's website uptime monitoring service, plans, payments, acceptable use and limitations.">
+  <p>
+    These terms apply to your use of {SITE.name} and the website at {SITE.url.replace('https://', '')} (the “Service”). By creating an account or using the Service, you agree to them. If you don’t agree, please don’t use the Service.
+  </p>
+
+  <h2>1. The Service</h2>
+  <p>
+    {SITE.name} checks websites you choose at regular intervals, records the results, sends alerts to the contacts you set up, and lets you publish status pages. Features and limits depend on your plan, as described on our <a href="/pricing">pricing page</a>.
+  </p>
+
+  <h2>2. Your account</h2>
+  <ul>
+    <li>You must give a valid email address and keep your sign-in secure. You’re responsible for activity on your account.</li>
+    <li>You must be at least 16 years old, or the age of majority where you live if higher.</li>
+    <li>One person or organization may have one free account. Creating many free accounts to get around plan limits isn’t allowed.</li>
+  </ul>
+
+  <h2>3. Acceptable use</h2>
+  <p>You may only monitor websites and services that you own or are authorized to monitor. You must not use the Service to:</p>
+  <ul>
+    <li>overload, attack or test the security of systems you don’t own or have permission to test;</li>
+    <li>monitor illegal content or break any law;</li>
+    <li>publish anything unlawful, misleading or harmful on a status page;</li>
+    <li>resell or abuse the Service, or interfere with its operation.</li>
+  </ul>
+  <p>We may suspend or remove monitors, status pages or accounts that break these rules.</p>
+
+  <h2>4. Plans, payments and renewals</h2>
+  <ul>
+    <li>The Free plan is free. Paid plans are billed in advance, monthly or yearly, and renew automatically until cancelled.</li>
+    <li>Payments are processed by our payment provider, which acts as the merchant of record and handles applicable sales tax or VAT.</li>
+    <li>You can cancel any time. Your paid features continue until the end of the period you’ve paid for, then your account moves to the Free plan.</li>
+    <li>If you move to a lower plan, monitors and features above that plan’s limits may be paused or turned off.</li>
+    <li>We may change prices for future billing periods and will tell you in advance. Refunds are covered by our <a href="/refund-policy">refund policy</a>.</li>
+  </ul>
+
+  <h2>5. Availability and accuracy</h2>
+  <p>
+    We work hard to keep the Service reliable, but monitoring depends on networks and systems outside our control. Checks, alerts and status pages may occasionally be delayed, missed or inaccurate. The Service is a tool to help you, not a guarantee that your website will stay online, and you shouldn’t rely on it as your only safeguard for critical systems.
+  </p>
+
+  <h2>6. Your content</h2>
+  <p>
+    You keep ownership of the information you add (such as monitor names and status page text). You give us permission to store and display it as needed to run the Service, including publicly on status pages you create.
+  </p>
+
+  <h2>7. Our intellectual property</h2>
+  <p>The Service, website, design and brand belong to {SITE.name}. You may not copy or reuse them without permission.</p>
+
+  <h2>8. Disclaimer and limitation of liability</h2>
+  <p>
+    The Service is provided “as is” and “as available”, without warranties of any kind. To the extent allowed by law, {SITE.name} is not liable for indirect or consequential losses, such as lost profits, revenue or data, caused by downtime of your website or of the Service. Our total liability for any claim is limited to the amount you paid us in the 12 months before the claim.
+  </p>
+
+  <h2>9. Ending your account</h2>
+  <p>
+    You can stop using the Service and ask us to delete your account at any time. We may suspend or close accounts that break these terms, or end the Service with reasonable notice.
+  </p>
+
+  <h2>10. Changes to these terms</h2>
+  <p>We may update these terms. We’ll change the date at the top and tell you about important changes. Continuing to use the Service means you accept the updated terms.</p>
+
+  <h2>11. Governing law</h2>
+  <p>These terms are governed by the laws of India, without regard to conflict-of-law rules.</p>
+
+  <h2>12. Contact</h2>
+  <p>Questions about these terms? Email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+</LegalPage>

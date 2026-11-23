@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+Astro.response.status = 404;
+---
+<Base title="Page not found · UptimeRun" description="This page doesn’t exist." noindex>
+  <Navbar />
+  <main class="relative overflow-hidden">
+    <div class="grid-bg absolute inset-0 pointer-events-none"></div>
+    <div class="glow absolute inset-0 pointer-events-none"></div>
+    <div class="relative mx-auto max-w-xl px-4 py-32 text-center">
+      <p class="text-sm font-semibold text-brand">404 · Page not found</p>
+      <h1 class="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-white">This page is down. For good.</h1>
+      <p class="mt-4 text-slate-400">The page you’re looking for doesn’t exist or has moved. Good news: your website can’t go down without you knowing.</p>
+      <div class="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+        <a href="/" class="rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Go to homepage</a>
+        <a href="/signup" class="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">Start monitoring free</a>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Base>

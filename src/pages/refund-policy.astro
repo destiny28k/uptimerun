@@ -1,0 +1,35 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { SITE } from '../site';
+---
+<LegalPage title="Refund Policy · UptimeRun" heading="Refund & Cancellation Policy" path="/refund-policy" updated="23 November 2026"
+  description="UptimeRun's refund and cancellation policy for Pro and Business plans: 14-day money-back guarantee on your first payment and cancel any time.">
+  <p>We want you to be happy with {SITE.name}. That’s why the Free plan lets you try the service before you pay, and why paid plans come with a simple money-back guarantee.</p>
+
+  <h2>14-day money-back guarantee</h2>
+  <p>
+    If you’re not happy with a paid plan, email us at <a href={`mailto:${SITE.email}`}>{SITE.email}</a> within <strong>14 days of your first payment</strong> and we’ll refund that payment in full. No questions asked.
+  </p>
+
+  <h2>Renewals</h2>
+  <ul>
+    <li><strong>Monthly plans:</strong> renewal payments are not refunded, but you can cancel any time to stop future charges.</li>
+    <li><strong>Yearly plans:</strong> if you contact us within 14 days of a yearly renewal, we’ll refund it in full.</li>
+  </ul>
+
+  <h2>How to cancel</h2>
+  <p>
+    You can cancel any time from <strong>Settings &amp; billing</strong> in your dashboard, or by emailing us. When you cancel, your paid features stay active until the end of the period you’ve paid for, then your account moves to the Free plan. Your monitors, alert contacts and status pages stay within the Free plan limits.
+  </p>
+
+  <h2>How refunds are paid</h2>
+  <p>
+    Refunds go back to the original payment method through our payment provider. They usually appear within 5–10 business days, depending on your bank.
+  </p>
+
+  <h2>Exceptions</h2>
+  <p>We may refuse refunds for accounts closed for breaking our <a href="/terms">Terms of Service</a>, or where refunds are clearly being abused.</p>
+
+  <h2>Questions</h2>
+  <p>Email <a href={`mailto:${SITE.email}`}>{SITE.email}</a> and we’ll be glad to help.</p>
+</LegalPage>

@@ -39,7 +39,7 @@ if (Astro.request.method === 'POST') {
     const c = await env.DB.prepare(`SELECT * FROM alert_channels WHERE id = ? AND user_id = ?`).bind(id, user.id).first<Channel>();
     if (c?.type === 'email') await sendEmail(env, c.target, '✅ Test alert', 'Your alerts are working. You will get messages like this when a monitor goes down or comes back up.');
     if (c?.type === 'telegram') await sendTelegram(env, c.target, '✅ <b>Test alert</b>\nYour alerts are working.');
-    if (c?.type === 'discord' || c?.type === 'slack') await sendWebhook(env, c.type, c.target, '✅ Test alert from Upbeat. Your alerts are working.');
+    if (c?.type === 'discord' || c?.type === 'slack') await sendWebhook(env, c.type, c.target, '✅ Test alert from UptimeRun. Your alerts are working.');
     notice = c ? 'Test alert sent. Check that it arrived.' : '';
   }
 }

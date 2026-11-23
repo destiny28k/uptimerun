@@ -1,7 +1,54 @@
 ---
 import '../styles/global.css';
 import { SITE } from '../site';
-const { title = `${SITE.name}: ${SITE.tagline}` } = Astro.props;
+
+interface Props {
+  title?: string;          // full <title>; keep ≤ 60 characters, main keyword first
+  description?: string;    // ≤ 155 characters
+  noindex?: boolean;       // dashboards, auth pages, 404
+  image?: string;          // OG image path (1200×630)
+  jsonLd?: object[];       // extra structured data for this page
+  breadcrumb?: { name: string; path: string }[];
+}
+const {
+  title = `${SITE.name}: Free Website Uptime Monitoring & Status Pages`,
+  description = SITE.description,
+  noindex = false,
+  image = '/og/default.png',
+  jsonLd = [],
+  breadcrumb,
+} = Astro.props;
+
+// Canonical always points at the real domain, without a trailing slash (except the home page).
+const path = Astro.url.pathname === '/' ? '/' : Astro.url.pathname.replace(/\/$/, '');
+const canonical = new URL(path, SITE.url).href;
+const ogImage = new URL(image, SITE.url).href;
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE.name,
+    url: SITE.url,
+    description: SITE.description,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE.name,
+    url: SITE.url,
+    logo: new URL('/apple-touch-icon.png', SITE.url).href,
+    email: SITE.email,
+  },
+  ...(breadcrumb ? [{
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ name: 'Home', path: '/' }, ...breadcrumb].map((b, i) => ({
+      '@type': 'ListItem', position: i + 1, name: b.name, item: new URL(b.path, SITE.url).href,
+    })),
+  }] : []),
+  ...jsonLd,
+];
 ---
 <!doctype html>
 <html lang="en">
@@ -9,6 +56,46 @@ const { title = `${SITE.name}: ${SITE.tagline}` } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
+    <meta name="theme-color" content="#05080f" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-48.png" sizes="48x48" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE.name}: website uptime monitoring and status pages`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    {!noindex && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
+
+    {SITE.gaId && !noindex && (
+      <script is:inline define:vars={{ gaId: SITE.gaId, host: new URL(SITE.url).hostname }}>
+        // Google Analytics loads only on the live domain, never in local dev.
+        if (location.hostname === host) {
+          var s = document.createElement('script'); s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+          document.head.appendChild(s);
+          window.dataLayer = window.dataLayer || [];
+          window.gtag = function () { dataLayer.push(arguments); };
+          gtag('js', new Date()); gtag('config', gaId);
+        }
+      </script>
+    )}
   </head>
   <body>
     <slot />

@@ -2,13 +2,11 @@
 import Logo from './Logo.astro';
 import { SITE } from '../site';
 const groups = [
-  { title: 'Product', links: ['Features', 'Pricing', 'Status pages', 'Changelog'] },
-  { title: 'Use cases', links: ['Online stores', 'Agencies & freelancers', 'SaaS & APIs', 'Blogs & WordPress'] },
-  { title: 'Free tools', links: ['Is my website down?', 'SSL checker', 'Domain expiry checker', 'HTTP status checker'] },
-  { title: 'Company', links: ['About', 'Contact', 'Privacy', 'Terms'] },
+  { title: 'Product', links: [['Features', '/#features'], ['Pricing', '/pricing'], ['Status page example', '/status/demo'], ['Uptime monitoring guide', '/#guide']] },
+  { title: 'Get started', links: [['Sign up free', '/signup'], ['Log in', '/login'], ['FAQ', '/#faq']] },
+  { title: 'Company', links: [['About', '/about'], ['Contact', '/contact']] },
+  { title: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund-policy']] },
 ];
-// Pages that exist so far; the rest are placeholders.
-const hrefs: Record<string, string> = { Features: '/#features', Pricing: '/pricing', 'Status pages': '/status/demo' };
 ---
 <section class="border-t border-white/5">
   <div class="relative mx-auto max-w-6xl px-4 sm:px-6 py-24 text-center">
@@ -31,10 +29,12 @@ const hrefs: Record<string, string> = { Features: '/#features', Pricing: '/prici
       <div>
         <p class="text-sm font-semibold text-white">{g.title}</p>
         <ul class="mt-4 space-y-2.5 text-sm text-slate-500">
-          {g.links.map((l) => <li><a href={hrefs[l] ?? '#'} class="hover:text-slate-300">{l}</a></li>)}
+          {g.links.map(([label, href]) => <li><a href={href} class="hover:text-slate-300">{label}</a></li>)}
         </ul>
       </div>
     ))}
   </div>
-  <div class="border-t border-white/5 py-6 text-center text-xs text-slate-600">© {new Date().getFullYear()} {SITE.name}. All rights reserved.</div>
+  <div class="border-t border-white/5 py-6 text-center text-xs text-slate-600">
+    © {new Date().getFullYear()} {SITE.name}. All rights reserved. · <a href={`mailto:${SITE.email}`} class="hover:text-slate-400">{SITE.email}</a>
+  </div>
 </footer>

@@ -8,14 +8,22 @@ import { SITE } from '../site';
 
 const faqs = [
   ['Can I really use the free plan for my business?', 'Yes. Commercial use is allowed on every plan, including Free. No credit card needed.'],
-  ['How does the 14-day free trial work?', 'You get every Pro or Business feature for 14 days. If you don’t upgrade, your account simply moves to the Free plan. Nothing is charged automatically.'],
   ['What happens to my monitors if I downgrade?', 'Your monitors and history stay. If you have more than the Free plan allows, the extra monitors are paused until you upgrade again or remove some.'],
   ['Can I switch between monthly and yearly?', `Yes, any time from Settings & billing. Yearly billing saves you ${YEARLY_SAVING}%.`],
-  ['Which payment methods do you accept?', 'All major cards and PayPal. Prices are in USD, and local taxes are added at checkout where required.'],
-  ['Do you offer refunds?', 'Yes. If you’re not happy, contact us within 14 days of a payment for a full refund.'],
+  ['Which payment methods do you accept?', 'All major credit and debit cards. Prices are in USD, and any sales tax or VAT is calculated at checkout.'],
+  ['Do you offer refunds?', 'Yes. If you’re not happy, email us within 14 days of your first payment for a full refund. See our refund policy for details.'],
 ];
 ---
-<Base title={`Pricing · ${SITE.name}`}>
+<Base
+  title="Pricing: Free Uptime Monitoring, Pro from $8/mo | UptimeRun"
+  description="Simple uptime monitoring pricing. Free forever for 10 monitors. Pro from $8/month with 1-minute checks, SSL & domain alerts and status pages on your domain."
+  breadcrumb={[{ name: 'Pricing', path: '/pricing' }]}
+  jsonLd={[{
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  }]}
+>
   <Navbar />
   <main>
     <section class="relative overflow-hidden">
@@ -85,7 +93,7 @@ const faqs = [
                     <a href="/signup" class:list={[
                       'inline-flex rounded-lg px-4 py-2 text-xs font-semibold transition-colors',
                       p.featured ? 'bg-brand text-ink-950 hover:bg-brand-soft' : 'border border-white/10 bg-white/5 text-white hover:bg-white/10',
-                    ]}>{p.monthly ? 'Start free trial' : 'Start free'}</a>
+                    ]}>{p.monthly ? `Get ${p.name}` : 'Start free'}</a>
                   </td>
                 ))}
               </tr>

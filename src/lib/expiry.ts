@@ -19,7 +19,7 @@ export function registrableDomain(hostname: string) {
 }
 
 async function getJson(url: string, timeoutMs = 20_000) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: 'application/json', 'user-agent': 'UpbeatMonitor/1.0' } });
+  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: 'application/json', 'user-agent': 'UptimeRunBot/1.0 (+https://uptimerun.com)' } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json<any>();
 }
