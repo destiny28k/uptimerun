@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "upbeat",
+  "name": "uptimerun",
   // Custom entry: Astro's fetch handler + the every-minute checker (scheduled).
   "main": "./src/worker.ts",
   "compatibility_date": "2026-11-01",
@@ -13,9 +13,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "upbeat",
-      // Placeholder for local dev. Replace with the real id from `wrangler d1 create upbeat`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "uptimerun",
+      "database_id": "e1e37162-8eff-4500-9ecc-8df597acb825",
       "migrations_dir": "migrations"
     }
   ],

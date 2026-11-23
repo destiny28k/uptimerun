@@ -38,7 +38,7 @@ Each provider gives a free Client ID and Secret. Put them in `.dev.vars` locally
 When you go live, add the real domain's URLs in each provider as well.
 
 ## Going live (later)
-1. `npx wrangler d1 create upbeat`, then put the returned `database_id` in `wrangler.jsonc`.
+1. `npx wrangler d1 create uptimerun`, then put the returned `database_id` in `wrangler.jsonc`.
 2. `npm run db:migrate:remote`
 3. Secrets: `npx wrangler secret put BETTER_AUTH_SECRET`, plus `RESEND_API_KEY` and `TELEGRAM_BOT_TOKEN`.
 4. Set `APP_URL` and `EMAIL_FROM` in `wrangler.jsonc` to the real domain.

@@ -6,8 +6,8 @@
     "dev": "astro dev --port 4330",
     "build": "astro build",
     "preview": "astro preview",
-    "db:migrate:local": "wrangler d1 migrations apply upbeat --local",
-    "db:migrate:remote": "wrangler d1 migrations apply upbeat --remote",
+    "db:migrate:local": "wrangler d1 migrations apply uptimerun --local",
+    "db:migrate:remote": "wrangler d1 migrations apply uptimerun --remote",
     "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
