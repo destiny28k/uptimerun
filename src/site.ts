@@ -7,5 +7,5 @@ export const SITE = {
   description:
     'Free website uptime monitoring with 1-minute checks, instant alerts on email, Telegram, Slack and Discord, SSL & domain expiry warnings, and public status pages.',
   price: '$8', // lowest Pro price per month (yearly billing)
-  gaId: '', // Google Analytics 4 Measurement ID (G-XXXXXXX). Empty = no analytics.
+  gaId: 'G-EPEESZ710X', // Google Analytics 4 Measurement ID. Empty = no analytics.
 };
