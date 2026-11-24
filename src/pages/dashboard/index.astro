@@ -133,7 +133,19 @@ const filters = [['all', 'All', monitors.length], ['down', 'Down', down], ['up',
   {incidents.length === 0 ? (
     <p class="mt-4 rounded-xl border border-white/10 bg-ink-900/50 px-5 py-6 text-sm text-slate-400">No incidents yet. Nice and quiet. 🌿</p>
   ) : (
-    <div class="mt-4 overflow-x-auto rounded-xl border border-white/10">
+    <ul class="mt-4 divide-y divide-white/5 rounded-xl border border-white/10 sm:hidden">
+      {incidents.map((i) => (
+        <li class="px-4 py-3.5">
+          <div class="flex items-center justify-between gap-3">
+            <p class="truncate text-sm font-medium text-white">{i.monitor_name}</p>
+            <span class:list={['shrink-0 rounded-full px-2 py-0.5 text-xs font-medium', i.resolved_at ? 'bg-brand/10 text-brand' : 'bg-red-500/15 text-red-300']}>{i.resolved_at ? 'Resolved' : 'Ongoing'}</span>
+          </div>
+          <p class="mt-1 text-xs text-slate-400">{i.cause}</p>
+          <p class="mt-1 text-xs text-slate-500">{fmtDate(i.started_at)} · {formatDuration((i.resolved_at ?? Date.now()) - i.started_at)}{i.resolved_at ? '' : ' so far'}</p>
+        </li>
+      ))}
+    </ul>
+    <div class="mt-4 hidden overflow-x-auto rounded-xl border border-white/10 sm:block">
       <table class="w-full min-w-[640px] text-sm">
         <thead class="border-b border-white/10 bg-white/[0.02] text-xs text-slate-500">
           <tr><th class="px-5 py-3 text-left font-medium">Status</th><th class="px-5 py-3 text-left font-medium">Monitor</th><th class="px-5 py-3 text-left font-medium">Root cause</th><th class="px-5 py-3 text-left font-medium">Started</th><th class="px-5 py-3 text-left font-medium">Duration</th></tr>

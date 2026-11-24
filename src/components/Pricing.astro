@@ -5,7 +5,7 @@ interface Props { heading?: boolean; compareLink?: boolean }
 const { heading = true, compareLink = true } = Astro.props;
 const fmt = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
 ---
-<section id="pricing" data-billing="yearly" class="group/billing border-t border-white/5 py-24">
+<section id="pricing" data-billing="yearly" class="group/billing border-t border-white/5 py-16 sm:py-24">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
     {heading && (
       <div class="reveal mx-auto max-w-2xl text-center">

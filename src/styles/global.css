@@ -122,3 +122,8 @@ h1, h2, h3 { letter-spacing: -0.025em; }
   .tilt { transform: none; }
   .lift:hover { transform: none; }
 }
+
+/* Phones: put the italic accent of section headings on its own line (avoids orphaned words). */
+@media (max-width: 639px) {
+  h2 .accent { display: block; }
+}

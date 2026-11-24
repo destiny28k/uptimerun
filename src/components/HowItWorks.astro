@@ -5,7 +5,7 @@ const steps = [
   { n: '03', title: 'Get alerted instantly', text: 'The moment it goes down, you hear about it on your favourite channel. And again when it’s back up.' },
 ];
 ---
-<section id="how" class="border-t border-white/5 py-24">
+<section id="how" class="border-t border-white/5 py-16 sm:py-24">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
     <div class="reveal mx-auto max-w-2xl text-center">
       <p class="eyebrow">How it works</p>
@@ -16,8 +16,8 @@ const steps = [
     <div class="relative mt-14 grid gap-6 md:grid-cols-3">
       <div class="absolute left-0 right-0 top-6 hidden md:block h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent"></div>
       {steps.map((s, i) => (
-        <div class="reveal lift card relative p-7" style={`--d:${i * 120}ms`}>
-          <span class="grid size-12 place-items-center rounded-xl bg-ink-950 ring-1 ring-brand/30 text-sm font-semibold text-brand">{s.n}</span>
+        <div class="reveal lift card relative p-7 text-center sm:text-left" style={`--d:${i * 120}ms`}>
+          <span class="mx-auto grid size-12 place-items-center rounded-xl bg-ink-950 sm:mx-0 ring-1 ring-brand/30 text-sm font-semibold text-brand">{s.n}</span>
           <h3 class="mt-5 text-lg font-semibold text-white">{s.title}</h3>
           <p class="mt-2 text-sm leading-relaxed text-slate-400">{s.text}</p>
         </div>

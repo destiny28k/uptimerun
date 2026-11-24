@@ -17,11 +17,11 @@ const displayName = user.name?.trim() || user.email.split('@')[0];
 const initials = displayName.split(/[\s._-]+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
 const nav = [
-  { id: 'monitors', label: 'Monitors', href: '/dashboard', icon: 'M3 12h4l2.5-6 5 12 2.5-6H21' },
-  { id: 'incidents', label: 'Incidents', href: '/dashboard#incidents', icon: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z' },
-  { id: 'status', label: 'Status pages', href: '/dashboard/status-pages', icon: 'M3 3h18v18H3zM3 9h18M9 21V9' },
-  { id: 'alerts', label: 'Alert contacts', href: '/dashboard/alerts', icon: 'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0' },
-  { id: 'settings', label: 'Settings & billing', href: '/dashboard/settings', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z' },
+  { id: 'monitors', label: 'Monitors', short: 'Monitors', href: '/dashboard', icon: 'M3 12h4l2.5-6 5 12 2.5-6H21' },
+  { id: 'incidents', label: 'Incidents', short: 'Incidents', href: '/dashboard#incidents', icon: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z' },
+  { id: 'status', label: 'Status pages', short: 'Status', href: '/dashboard/status-pages', icon: 'M3 3h18v18H3zM3 9h18M9 21V9' },
+  { id: 'alerts', label: 'Alert contacts', short: 'Alerts', href: '/dashboard/alerts', icon: 'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0' },
+  { id: 'settings', label: 'Settings & billing', short: 'Settings', href: '/dashboard/settings', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z' },
 ];
 ---
 <Base title={`${title} · Dashboard`} noindex>
@@ -60,13 +60,20 @@ const nav = [
         <Logo href="/dashboard" />
         <a href="/dashboard/new" class="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-ink-950">+ New</a>
       </header>
-      <nav class="lg:hidden flex gap-1 overflow-x-auto border-b border-white/5 px-3 py-2 text-sm">
+      <!-- Bottom tab bar (mobile) -->
+      <nav aria-label="Dashboard" class="lg:hidden fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/[0.07] bg-ink-950/90 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         {nav.map((n) => (
-          <a href={n.href} class:list={['shrink-0 rounded-md px-3 py-1.5', active === n.id ? 'bg-white/[0.06] text-white' : 'text-slate-400']}>{n.label}</a>
+          <a href={n.href} aria-current={active === n.id ? 'page' : undefined} class:list={[
+            'flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors',
+            active === n.id ? 'text-brand-soft' : 'text-slate-500 hover:text-slate-300',
+          ]}>
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={n.icon} /></svg>
+            {n.short}
+          </a>
         ))}
       </nav>
 
-      <main class="mx-auto max-w-6xl px-4 sm:px-8 py-8">
+      <main class="mx-auto max-w-6xl px-4 sm:px-8 pt-6 pb-28 sm:pt-8 lg:pb-8">
         <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div class="flex min-w-0 items-center gap-4">
             <slot name="icon" />

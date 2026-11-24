@@ -10,7 +10,7 @@ const points = [
   { title: 'Real humans', text: `Questions? Email ${SITE.email} and a real person replies.`, icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z' },
 ];
 ---
-<section id="trust" class="border-t border-white/5 py-24">
+<section id="trust" class="border-t border-white/5 py-16 sm:py-24">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
     <div class="reveal mx-auto max-w-2xl text-center">
       <p class="eyebrow">Why UptimeRun</p>
@@ -19,8 +19,8 @@ const points = [
     </div>
     <div class="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {points.map((p, i) => (
-        <div class="reveal card p-6" style={`--d:${(i % 3) * 80}ms`}>
-          <span class="grid size-9 place-items-center rounded-lg bg-white/[0.04] text-brand-soft ring-1 ring-white/10">
+        <div class="reveal card p-6 text-center sm:text-left" style={`--d:${(i % 3) * 80}ms`}>
+          <span class="mx-auto grid size-9 place-items-center rounded-lg bg-white/[0.04] sm:mx-0 text-brand-soft ring-1 ring-white/10">
             <svg viewBox="0 0 24 24" class="size-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={p.icon} /></svg>
           </span>
           <h3 class="mt-4 font-semibold text-white">{p.title}</h3>

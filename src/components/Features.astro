@@ -8,7 +8,7 @@ const features = [
   { title: 'Fair, simple pricing', text: '10 monitors free forever, commercial use included. Pro starts at $8/month.', icon: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
 ];
 ---
-<section id="features" class="relative border-t border-white/5 py-24">
+<section id="features" class="relative border-t border-white/5 py-16 sm:py-24">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
     <div class="reveal mx-auto max-w-2xl text-center">
       <p class="eyebrow">Everything you need</p>
@@ -18,10 +18,10 @@ const features = [
       <p class="mt-4 text-slate-400">Set up your first monitor in 30 seconds. No servers, no config files, no learning curve.</p>
     </div>
 
-    <div class="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/5 sm:grid-cols-2 lg:grid-cols-3">
-      {features.map((f, i) => (
-        <div class="reveal group bg-ink-950 p-7 hover:bg-ink-900 transition-colors" style={`--d:${(i % 3) * 100 + Math.floor(i / 3) * 80}ms`}>
-          <span class="grid place-items-center size-10 rounded-lg bg-brand/10 ring-1 ring-brand/20 text-brand">
+    <div class="reveal mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/5 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => (
+        <div class="group bg-ink-950 p-7 text-center sm:text-left hover:bg-ink-900 transition-colors">
+          <span class="mx-auto grid place-items-center size-10 rounded-lg bg-brand/10 ring-1 ring-brand/20 text-brand sm:mx-0">
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={f.icon} /></svg>
           </span>
           <h3 class="mt-5 text-base font-semibold text-white">{f.title}</h3>

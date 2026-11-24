@@ -19,7 +19,7 @@ const signedIn = Astro.cookies.has('__Secure-better-auth.session_token') || Astr
     <div class="flex items-center gap-2">
       {signedIn ? (
       <a href="/dashboard" class="btn-primary inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-ink-950">
-        Go to dashboard →
+        <span class="hidden sm:inline">Go to&nbsp;</span>Dashboard →
       </a>
       ) : (<>
       <a href="/login" class="hidden sm:inline-flex px-3 py-2 text-sm text-slate-300 hover:text-white">Log in</a>
@@ -27,6 +27,35 @@ const signedIn = Astro.cookies.has('__Secure-better-auth.session_token') || Astr
         Start free
       </a>
       </>)}
+      <button type="button" data-menu-btn aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"
+        class="md:hidden -mr-1 grid size-10 place-items-center rounded-lg text-slate-300 hover:bg-white/5">
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path data-open d="M4 7h16M4 12h16M4 17h16" /><path data-close class="hidden" d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
     </div>
   </nav>
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="md:hidden hidden border-t border-white/5 bg-ink-950/95 backdrop-blur-xl">
+    <ul class="mx-auto max-w-6xl px-4 py-3">
+      {links.map((l) => <li><a href={l.href} class="block rounded-lg px-3 py-3 text-[15px] text-slate-300 hover:bg-white/5 hover:text-white">{l.label}</a></li>)}
+      {!signedIn && <li><a href="/login" class="block rounded-lg px-3 py-3 text-[15px] text-slate-300 hover:bg-white/5 hover:text-white">Log in</a></li>}
+    </ul>
+  </div>
 </header>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('[data-menu-btn]');
+  const menu = document.getElementById('mobile-menu');
+  if (btn && menu) {
+    const set = (open: boolean) => {
+      menu.classList.toggle('hidden', !open);
+      btn.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      btn.querySelector('[data-open]')!.classList.toggle('hidden', open);
+      btn.querySelector('[data-close]')!.classList.toggle('hidden', !open);
+    };
+    btn.addEventListener('click', () => set(menu.classList.contains('hidden')));
+    menu.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) set(false); });
+  }
+</script>

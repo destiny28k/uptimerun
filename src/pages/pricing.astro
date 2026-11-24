@@ -74,29 +74,29 @@ const guarantees = [
         </div>
 
         <div class="card mt-12 overflow-x-auto">
-          <table class="w-full min-w-[640px] text-sm">
+          <table class="w-full table-fixed text-[13px] sm:table-auto sm:min-w-[640px] sm:text-sm">
             <thead class="bg-white/[0.02]">
               <tr class="border-b border-white/10">
-                <th class="w-2/5 px-5 py-4 text-left font-medium text-slate-400">Features</th>
+                <th class="w-[34%] px-3 py-4 text-left font-medium text-slate-400 sm:w-2/5 sm:px-5">Features</th>
                 {PLANS.map((p) => (
-                  <th class:list={['px-4 py-5 text-center', p.featured && 'bg-brand/[0.06]']}>
-                    <span class:list={['block text-base font-semibold', p.featured ? 'text-brand-soft' : 'text-white']}>{p.name}</span>
-                    <span class="block text-xs font-normal text-slate-500">{p.monthly ? `from $${(p.yearly / 12).toFixed(0)}/mo` : 'Free forever'}</span>
+                  <th class:list={['px-1.5 py-4 text-center sm:px-4 sm:py-5', p.featured && 'bg-brand/[0.06]']}>
+                    <span class:list={['block text-sm font-semibold sm:text-base', p.featured ? 'text-brand-soft' : 'text-white']}>{p.name}</span>
+                    <span class="block text-[11px] font-normal text-slate-500 sm:text-xs">{p.monthly ? `from $${(p.yearly / 12).toFixed(0)}/mo` : 'Free forever'}</span>
                   </th>
                 ))}
               </tr>
             </thead>
             {FEATURES.map((g) => (
               <tbody class="divide-y divide-white/5">
-                <tr class="bg-white/[0.02]"><th colspan="4" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">{g.title}</th></tr>
+                <tr class="bg-white/[0.02]"><th colspan="4" class="px-3 py-3 text-left sm:px-5 text-xs font-semibold uppercase tracking-wider text-slate-400">{g.title}</th></tr>
                 {g.rows.map((r) => (
                   <tr class="hover:bg-white/[0.015]">
-                    <td class="px-5 py-3.5">
+                    <td class="px-3 py-3 sm:px-5 sm:py-3.5">
                       <span class="text-slate-200">{r.label}</span>
-                      {r.hint && <span class="block text-xs text-slate-500">{r.hint}</span>}
+                      {r.hint && <span class="hidden text-xs text-slate-500 sm:block">{r.hint}</span>}
                     </td>
                     {r.values.map((v, i) => (
-                      <td class:list={['px-4 py-3.5 text-center', PLANS[i].featured && 'bg-brand/[0.04]']}>
+                      <td class:list={['px-1.5 py-3 text-center sm:px-4 sm:py-3.5', PLANS[i].featured && 'bg-brand/[0.04]']}>
                         {v === true ? (
                           <svg viewBox="0 0 24 24" class="mx-auto size-5 text-brand" aria-label="Included" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         ) : v === false ? (
@@ -112,13 +112,13 @@ const guarantees = [
             ))}
             <tfoot>
               <tr class="border-t border-white/10">
-                <td class="px-5 py-5"></td>
+                <td class="px-3 py-4 sm:px-5 sm:py-5"></td>
                 {PLANS.map((p) => (
-                  <td class:list={['px-4 py-5 text-center', p.featured && 'bg-brand/[0.04]']}>
+                  <td class:list={['px-1.5 py-4 text-center sm:px-4 sm:py-5', p.featured && 'bg-brand/[0.04]']}>
                     <a href="/signup" class:list={[
-                      'inline-flex rounded-lg px-4 py-2 text-xs font-semibold',
+                      'inline-flex whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-semibold sm:px-4 sm:text-xs',
                       p.featured ? 'btn-primary text-ink-950' : 'btn-ghost text-white',
-                    ]}>{p.monthly ? `Get ${p.name}` : 'Start free'}</a>
+                    ]}>{p.monthly ? <><span class="hidden sm:inline">Get&nbsp;</span>{p.name}</> : <>Start<span class="hidden sm:inline">&nbsp;free</span></>}</a>
                   </td>
                 ))}
               </tr>
