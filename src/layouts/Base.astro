@@ -89,8 +89,27 @@ const schema = [
 
     {SITE.gaId && !noindex && (
       <script is:inline define:vars={{ gaId: SITE.gaId, host: new URL(SITE.url).hostname }}>
+        // Owner's own devices: open any page with ?notrack=1 once to stop counting this browser
+        // (?notrack=0 turns it back on). Stored in localStorage, so it survives network/IP changes.
+        var off = false;
+        try {
+          var nt = new URLSearchParams(location.search).get('notrack');
+          if (nt === '1') localStorage.setItem('ur_notrack', '1');
+          if (nt === '0') localStorage.removeItem('ur_notrack');
+          off = localStorage.getItem('ur_notrack') === '1';
+          if (nt === '1' || nt === '0') {
+            var u = new URL(location.href); u.searchParams.delete('notrack');
+            history.replaceState(null, '', u.pathname + u.search + u.hash);
+            addEventListener('DOMContentLoaded', function () {
+              var t = document.createElement('div');
+              t.textContent = off ? 'Analytics off for this browser. Your visits won’t be counted.' : 'Analytics back on for this browser.';
+              t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;background:#111827;color:#fff;border:1px solid rgba(255,255,255,.15);padding:10px 16px;border-radius:10px;font:500 14px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5)';
+              document.body.appendChild(t); setTimeout(function () { t.remove(); }, 4000);
+            });
+          }
+        } catch (e) {}
         // Google Analytics loads only on the live domain, never in local dev.
-        if (location.hostname === host) {
+        if (location.hostname === host && !off) {
           var s = document.createElement('script'); s.async = true;
           s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
           document.head.appendChild(s);

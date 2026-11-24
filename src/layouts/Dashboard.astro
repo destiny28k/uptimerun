@@ -98,7 +98,8 @@ const nav = [
   {signupMethod && (
     <script is:inline define:vars={{ gaId: SITE.gaId, host: new URL(SITE.url).hostname, method: signupMethod }}>
       // Report the completed signup to Google Analytics (live site only), without tracking dashboard page views.
-      if (gaId && location.hostname === host) {
+      var off = false; try { off = localStorage.getItem('ur_notrack') === '1'; } catch (e) {}
+      if (gaId && location.hostname === host && !off) {
         var s = document.createElement('script'); s.async = true;
         s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
         document.head.appendChild(s);
