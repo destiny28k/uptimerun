@@ -5,6 +5,7 @@ import UpgradeModal from '../components/dash/UpgradeModal.astro';
 import ConfirmDialog from '../components/dash/ConfirmDialog.astro';
 import { env } from 'cloudflare:workers';
 import { countMonitors } from '../lib/data';
+import { SITE } from '../site';
 
 interface Props { title: string; active: string; subtitle?: string }
 const { title, active, subtitle } = Astro.props;
@@ -14,6 +15,9 @@ const plan = Astro.locals.plan!;
 const usedPct = Math.min(100, Math.round((used / plan.limits.monitors) * 100));
 // Magic-link users may have no name yet, so fall back to the email.
 const displayName = user.name?.trim() || user.email.split('@')[0];
+// Set only on the first visit after creating an account (see AuthForm newUserCallbackURL).
+const fresh = Astro.url.searchParams.get('new');
+const signupMethod = fresh && /^[a-z]{1,20}$/.test(fresh) ? fresh : null;
 const initials = displayName.split(/[\s._-]+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
 const nav = [
@@ -91,4 +95,21 @@ const nav = [
   </div>
   <UpgradeModal />
   <ConfirmDialog />
+  {signupMethod && (
+    <script is:inline define:vars={{ gaId: SITE.gaId, host: new URL(SITE.url).hostname, method: signupMethod }}>
+      // Report the completed signup to Google Analytics (live site only), without tracking dashboard page views.
+      if (gaId && location.hostname === host) {
+        var s = document.createElement('script'); s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { dataLayer.push(arguments); };
+        gtag('js', new Date());
+        gtag('config', gaId, { send_page_view: false });
+        gtag('event', 'sign_up', { method: method });
+      }
+      var u = new URL(location.href); u.searchParams.delete('new');
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    </script>
+  )}
 </Base>

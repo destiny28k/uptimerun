@@ -93,10 +93,12 @@ const iconCls = 'pointer-events-none absolute left-3 top-1/2 size-[18px] -transl
   const siteInput = document.getElementById('site') as HTMLInputElement | null;
 
   /** Where to land after sign-in. New users with a website go to /dashboard/welcome to create it. */
-  function callbacks() {
+  function callbacks(method: string) {
     const site = siteInput?.value.trim() ?? '';
     const welcome = site ? `/dashboard/welcome?url=${encodeURIComponent(site)}` : '/dashboard';
-    return { callbackURL: welcome, newUserCallbackURL: welcome, errorCallbackURL: location.pathname };
+    // ?new=<method> marks a completed signup so the dashboard can report it to Google Analytics once.
+    const newUser = `${welcome}${welcome.includes('?') ? '&' : '?'}new=${method}`;
+    return { callbackURL: welcome, newUserCallbackURL: newUser, errorCallbackURL: location.pathname };
   }
 
   function validSite() {
@@ -120,7 +122,7 @@ const iconCls = 'pointer-events-none absolute left-3 top-1/2 size-[18px] -transl
       const res = await fetch('/api/auth/sign-in/magic-link', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, ...callbacks() }),
+        body: JSON.stringify({ email, ...callbacks('email') }),
       });
       if (res.ok) {
         document.getElementById('sent-to')!.textContent = email;
@@ -159,7 +161,7 @@ const iconCls = 'pointer-events-none absolute left-3 top-1/2 size-[18px] -transl
         const res = await fetch('/api/auth/sign-in/social', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ provider: btn.dataset.provider, ...callbacks() }),
+          body: JSON.stringify({ provider: btn.dataset.provider, ...callbacks(btn.dataset.provider ?? 'social') }),
         });
         const body = await res.json().catch(() => ({}));
         if (body.url) { location.href = body.url; return; }

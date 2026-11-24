@@ -5,19 +5,23 @@ import { countMonitors } from '../../lib/data';
 import { isPrivateHost } from '../../lib/monitorForm';
 
 const user = Astro.locals.user!;
+// Carry the "new signup" flag (see AuthForm) through to the page we land on.
+const fresh = Astro.url.searchParams.get('new');
+const flag = fresh && /^[a-z]{1,20}$/.test(fresh) ? `new=${fresh}` : '';
+const go = (path: string) => Astro.redirect(flag ? `${path}${path.includes('?') ? '&' : '?'}${flag}` : path);
 let raw = (Astro.url.searchParams.get('url') ?? '').trim();
 if (raw && !/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
 
 let parsed: URL | null = null;
 try { parsed = new URL(raw); } catch {}
-if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.') || isPrivateHost(parsed.hostname)) return Astro.redirect('/dashboard');
+if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes('.') || isPrivateHost(parsed.hostname)) return go('/dashboard');
 
 const url = parsed.toString();
 // Don't duplicate if they click the link twice, and respect the free limit.
 const existing = await env.DB.prepare(`SELECT id FROM monitors WHERE user_id = ? AND url = ?`).bind(user.id, url).first<{ id: string }>();
-if (existing) return Astro.redirect(`/dashboard/monitor?id=${existing.id}`);
+if (existing) return go(`/dashboard/monitor?id=${existing.id}`);
 const { limits } = Astro.locals.plan!;
-if ((await countMonitors(env.DB, user.id)) >= limits.monitors) return Astro.redirect('/dashboard/new');
+if ((await countMonitors(env.DB, user.id)) >= limits.monitors) return go('/dashboard/new');
 
 const id = crypto.randomUUID();
 await env.DB.prepare(
@@ -25,5 +29,5 @@ await env.DB.prepare(
    VALUES (?, ?, ?, ?, 'http', ?, 'pending', 0, ?)`,
 ).bind(id, user.id, parsed.hostname.replace(/^www\./, ''), url, Math.max(limits.minIntervalSec, 60), Date.now()).run();
 
-return Astro.redirect(`/dashboard/monitor?id=${id}`);
+return go(`/dashboard/monitor?id=${id}`);
 ---
