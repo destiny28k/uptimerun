@@ -1,0 +1,50 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+const faqs: [string, string][] = [
+  ['How do I check when an SSL certificate expires?', 'Enter the website address above. We look up the newest valid certificate issued for that exact hostname and show the expiry date, the number of days left and the certificate authority that issued it.'],
+  ['Where does this data come from?', 'Every publicly trusted certificate is recorded in Certificate Transparency logs. We read those public logs and pick the newest valid certificate that covers the hostname, which is the one the site normally serves.'],
+  ['What happens when an SSL certificate expires?', 'Browsers show a full-page security warning such as “Your connection is not private”. Most visitors leave immediately, online payments stop and search rankings can suffer until the certificate is renewed.'],
+  ['My certificate auto-renews. Do I still need to check?', 'Yes. Automatic renewal fails more often than people expect: a changed DNS record, a firewall rule, a full disk or an expired payment method can all stop it silently. A reminder before expiry gives you time to fix it.'],
+  ['Can I get a reminder before my certificate expires?', 'Yes. Add your site to UptimeRun and paid plans warn you 30, 14, 7 and 1 day before your SSL certificate or domain expires, alongside regular uptime checks.'],
+];
+---
+<ToolPage
+  slug="ssl-checker"
+  title="SSL Certificate Checker: Expiry Date & Issuer | UptimeRun"
+  description="Free SSL certificate checker. Find out when a website’s SSL/TLS certificate expires, how many days are left and which certificate authority issued it."
+  heading="SSL certificate checker"
+  lead="Find out when a site’s SSL certificate expires, how many days are left and who issued it. Enter a domain or full URL."
+  button="Check SSL"
+  faqs={faqs}
+>
+  <h2>What this SSL checker tells you</h2>
+  <p>
+    An SSL (or TLS) certificate is what puts the padlock in the browser’s address bar and lets visitors connect to a site securely over <code>https://</code>. Every certificate has a fixed lifetime, and modern certificates are short-lived: many last only 90 days. This tool shows you three things at a glance:
+  </p>
+  <ul>
+    <li><strong>Expiry date:</strong> the exact day the certificate stops being valid.</li>
+    <li><strong>Days left:</strong> shown in green when there’s plenty of time, amber under 30 days and red under a week.</li>
+    <li><strong>Issuer:</strong> the certificate authority that signed it, which tells you where to renew.</li>
+  </ul>
+
+  <h2>How the check works</h2>
+  <p>
+    Publicly trusted certificate authorities must publish every certificate they issue to open <strong>Certificate Transparency</strong> logs. We search those logs for the hostname you enter, ignore revoked and expired certificates, and pick the newest one that actually covers that name (including wildcard certificates like <code>*.example.com</code>). That’s the certificate a correctly configured server is serving.
+  </p>
+  <p>
+    Note that a certificate is tied to an exact hostname. <code>example.com</code> and <code>www.example.com</code> can have different certificates, so check the address your visitors actually use.
+  </p>
+
+  <h2>Why expired certificates are such a common outage</h2>
+  <p>
+    When a certificate expires, the site is technically still online, but every visitor sees a frightening security warning instead of your page. Checkout flows, APIs and mobile apps that call your server start failing too. It’s one of the most avoidable outages there is, yet it happens to large and small companies alike, usually because automatic renewal broke quietly weeks earlier and nobody noticed.
+  </p>
+  <p>
+    Common reasons renewal fails include DNS changes that break domain validation, a server that was migrated without its renewal job, rate limits at the certificate authority, or an expired payment card for a paid certificate.
+  </p>
+
+  <h2>Get a warning before it expires</h2>
+  <p>
+    Checking once is useful; being reminded is better. With <a href="/signup">UptimeRun</a> you add your website once and we keep watching it: uptime checks every few minutes plus SSL and <a href="/tools/domain-expiry-checker">domain expiry</a> reminders 30, 14, 7 and 1 day before the deadline on paid plans. Want to see whether the site is reachable right now? Try the <a href="/tools/website-down-checker">website down checker</a>.
+  </p>
+</ToolPage>

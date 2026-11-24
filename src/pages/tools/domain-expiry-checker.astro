@@ -1,0 +1,51 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+const faqs: [string, string][] = [
+  ['How do I find out when a domain expires?', 'Type the domain above and press Check domain. We ask the official registry for that domain extension through RDAP and show the registration expiry date and how many days are left.'],
+  ['What is RDAP?', 'RDAP (Registration Data Access Protocol) is the modern, standardized replacement for WHOIS. Registries publish domain registration data through it in a structured format, so the expiry date comes straight from the source.'],
+  ['Why does it say the expiry date is not published?', 'Some registries, mostly for certain country-code domains, don’t share expiry dates publicly. In that case, check the date in your registrar’s account.'],
+  ['What happens when a domain expires?', 'Your website and email usually stop working within days. After a grace period the domain can be deleted and registered by someone else, sometimes a domain reseller who will ask a high price to sell it back.'],
+  ['Can I get reminded before my domain expires?', 'Yes. Add your site to UptimeRun and paid plans email you 30, 14, 7 and 1 day before the domain or SSL certificate expires, together with uptime monitoring.'],
+];
+---
+<ToolPage
+  slug="domain-expiry-checker"
+  title="Domain Expiry Checker: When Does a Domain Expire? | UptimeRun"
+  description="Free domain expiry checker. Look up a domain name’s registration expiry date and days left, straight from the official registry via RDAP."
+  heading="Domain expiry checker"
+  lead="See when a domain name’s registration expires and how many days are left, straight from the official registry."
+  button="Check domain"
+  faqs={faqs}
+>
+  <h2>Check a domain’s expiration date in seconds</h2>
+  <p>
+    Every domain name is registered for a fixed period, usually one to ten years. When that period ends and the domain isn’t renewed, it expires. This tool looks up the official <strong>registration expiry date</strong> for any domain and shows how many days remain, colour-coded so you can spot trouble quickly: green for plenty of time, amber under 60 days and red under two weeks.
+  </p>
+  <p>
+    You can enter a bare domain like <code>example.com</code> or paste any full URL. If you enter a subdomain such as <code>shop.example.co.uk</code>, we automatically look up the registered domain, <code>example.co.uk</code>, since that’s what actually expires.
+  </p>
+
+  <h2>Where the date comes from</h2>
+  <p>
+    We query <strong>RDAP</strong>, the standard protocol that domain registries use to publish registration data. It replaces the older WHOIS system and returns structured, reliable information directly from the registry responsible for each extension, such as .com, .net, .org or .io. That means the date you see is the authoritative one, not a guess or a cached copy from a third-party database.
+  </p>
+
+  <h2>Why domains expire by accident</h2>
+  <p>
+    Losing a domain rarely happens on purpose. The usual causes are surprisingly ordinary:
+  </p>
+  <ul>
+    <li>Auto-renew was switched off, or the card on file expired.</li>
+    <li>Renewal reminders went to an old email address or a former employee.</li>
+    <li>The domain was registered years ago by a freelancer or agency who is no longer involved.</li>
+    <li>Several domains are spread across different registrars and one was forgotten.</li>
+  </ul>
+  <p>
+    When a domain lapses, the website, email and any service using it go offline together. After the grace and redemption periods, it can be deleted and picked up by anyone.
+  </p>
+
+  <h2>Never miss a renewal</h2>
+  <p>
+    Bookmark this page for quick lookups, or let <a href="/signup">UptimeRun</a> do the remembering. Add your website once and paid plans warn you 30, 14, 7 and 1 day before the domain or its <a href="/tools/ssl-checker">SSL certificate</a> expires, while uptime checks catch outages as they happen. If a site has suddenly stopped loading, the <a href="/tools/website-down-checker">website down checker</a> will tell you whether it’s down for everyone.
+  </p>
+</ToolPage>

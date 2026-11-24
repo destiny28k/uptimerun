@@ -3,6 +3,7 @@ import Logo from './Logo.astro';
 import { SITE } from '../site';
 const groups = [
   { title: 'Product', links: [['Features', '/#features'], ['Pricing', '/pricing'], ['Status page example', '/status/demo'], ['Uptime monitoring guide', '/#guide']] },
+  { title: 'Free tools', links: [['All free tools', '/tools'], ['Website down checker', '/tools/website-down-checker'], ['SSL checker', '/tools/ssl-checker'], ['Domain expiry checker', '/tools/domain-expiry-checker'], ['HTTP status checker', '/tools/http-status-checker']] },
   { title: 'Get started', links: [['Sign up free', '/signup'], ['Log in', '/login'], ['FAQ', '/#faq']] },
   { title: 'Company', links: [['About', '/about'], ['Contact', '/contact']] },
   { title: 'Legal', links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund-policy']] },
@@ -11,13 +12,13 @@ const groups = [
 <section class="border-t border-white/5">
   <div class="relative mx-auto max-w-6xl px-4 sm:px-6 py-24 text-center">
     <div class="glow absolute inset-0 pointer-events-none"></div>
-    <h2 class="relative text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance">Stop finding out from your customers.</h2>
+    <h2 class="relative text-3xl sm:text-6xl font-semibold tracking-tight text-white text-balance"><span class="text-sheen">Stop finding out from</span> <span class="accent text-brand-soft">your customers.</span></h2>
     <p class="relative mt-4 text-slate-400">Your first monitor takes 30 seconds. Free forever for 10 sites.</p>
-    <a href="/signup" class="relative mt-8 inline-flex rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-ink-950 shadow-lg shadow-brand/20 hover:bg-brand-soft transition-colors">Start monitoring free</a>
+    <a href="/signup" class="btn-primary relative mt-9 inline-flex rounded-xl px-7 py-3.5 text-sm font-semibold text-ink-950">Start monitoring free</a>
   </div>
 </section>
 <footer class="border-t border-white/5">
-  <div class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 py-14 md:grid-cols-[1.5fr_repeat(4,1fr)]">
+  <div class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 py-14 md:grid-cols-3 lg:grid-cols-[1.5fr_repeat(5,1fr)]">
     <div>
       <Logo />
       <p class="mt-4 max-w-xs text-sm text-slate-500">Simple, fair uptime monitoring and status pages for everyone.</p>

@@ -1,0 +1,178 @@
+---
+// Shared layout for the free checker tools (/tools/*): form, live result, CTA, guide copy, FAQ, other tools.
+import Base from '../layouts/Base.astro';
+import Navbar from './Navbar.astro';
+import Footer from './Footer.astro';
+import { TOOLS, type ToolSlug } from '../data/tools';
+import { SITE } from '../site';
+
+interface Props {
+  slug: ToolSlug;
+  title: string;        // <title>, ≤ 60 chars
+  description: string;  // meta description, ≤ 155 chars
+  heading: string;
+  lead: string;
+  button: string;
+  faqs: [string, string][];
+}
+const { slug, title, description, heading, lead, button, faqs } = Astro.props;
+const tool = TOOLS.find((t) => t.slug === slug)!;
+const path = `/tools/${slug}`;
+const others = TOOLS.filter((t) => t.slug !== slug);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: tool.name,
+    url: new URL(path, SITE.url).href,
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  },
+];
+const prefill = (Astro.url.searchParams.get('url') ?? '').slice(0, 200);
+---
+<Base title={title} description={description} jsonLd={jsonLd} breadcrumb={[{ name: 'Free tools', path: '/tools' }, { name: tool.name, path }]}>
+  <Navbar />
+  <main>
+    <section class="relative overflow-hidden border-b border-white/5">
+      <div class="grid-bg absolute inset-0 pointer-events-none"></div>
+      <div class="glow absolute inset-0 pointer-events-none"></div>
+      <div class="relative mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-14 sm:pt-24 text-center">
+        <nav class="text-xs text-slate-500"><a href="/tools" class="hover:text-slate-300">Free tools</a> <span class="mx-1">/</span> <span class="text-slate-400">{tool.name}</span></nav>
+        <h1 class="mt-4 text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance">{heading}</h1>
+        <p class="mx-auto mt-4 max-w-xl text-slate-400 text-balance">{lead}</p>
+
+        <form id="tool-form" data-tool={tool.id} class="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row" novalidate>
+          <label for="tool-url" class="sr-only">Website address</label>
+          <input id="tool-url" name="url" inputmode="url" autocomplete="url" value={prefill} required maxlength="300"
+            placeholder="example.com"
+            class="flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand/50 focus:bg-white/[0.06] transition-colors" />
+          <button id="tool-btn" type="submit" class="rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-ink-950 hover:bg-brand-soft transition-colors disabled:opacity-60">{button}</button>
+        </form>
+        <p class="mt-3 text-xs text-slate-500">Free, no sign-up. Checked from our servers, not your browser.</p>
+
+        <div id="tool-out" class="mx-auto mt-8 hidden max-w-xl text-left" aria-live="polite">
+          <div id="tool-summary" class="flex items-start gap-3 rounded-xl border px-4 py-3 text-sm"></div>
+          <dl id="tool-rows" class="mt-3 divide-y divide-white/5 rounded-xl border border-white/10 bg-ink-900/60 text-sm"></dl>
+          <ol id="tool-chain" class="mt-3 hidden space-y-1.5 rounded-xl border border-white/10 bg-ink-900/60 p-4 text-xs font-mono"></ol>
+          <div id="tool-cta" class="mt-4 hidden rounded-xl border border-brand/30 bg-brand/[0.06] p-5 text-center">
+            <p class="font-semibold text-white">Don’t check by hand. Get an alert the moment it changes.</p>
+            <p class="mt-1 text-sm text-slate-400">UptimeRun checks your site around the clock and alerts you the moment it goes down. Free for 10 sites; SSL and domain expiry reminders on paid plans.</p>
+            <a id="tool-cta-link" href="/signup" class="mt-4 inline-flex rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-ink-950 shadow-lg shadow-brand/20 hover:bg-brand-soft transition-colors">Monitor this 24/7, free →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <article class="mx-auto max-w-3xl px-4 sm:px-6 py-16 space-y-5 text-[15px] leading-relaxed text-slate-400 [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-white [&_h3]:mt-6 [&_h3]:font-semibold [&_h3]:text-white [&_strong]:text-slate-200 [&_a]:text-brand [&_a:hover]:text-brand-soft [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 [&_code]:rounded [&_code]:bg-white/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-slate-200">
+      <slot />
+    </article>
+
+    <section class="border-t border-white/5 py-16">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6">
+        <h2 class="text-2xl font-semibold tracking-tight text-white">Frequently asked questions</h2>
+        <div class="mt-6 divide-y divide-white/5 rounded-2xl border border-white/10">
+          {faqs.map(([q, a]) => (
+            <details class="group px-6 py-5">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-white">
+                {q}<span class="text-slate-500 transition-transform group-open:rotate-45 text-xl leading-none">+</span>
+              </summary>
+              <p class="mt-3 text-sm leading-relaxed text-slate-400">{a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-white/5 py-16">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6">
+        <h2 class="text-2xl font-semibold tracking-tight text-white">More free tools</h2>
+        <div class="mt-6 grid gap-4 sm:grid-cols-3">
+          {others.map((t) => (
+            <a href={`/tools/${t.slug}`} class="rounded-xl border border-white/10 bg-ink-900/60 p-5 hover:border-brand/40 transition-colors">
+              <p class="font-semibold text-white">{t.name}</p>
+              <p class="mt-1.5 text-sm text-slate-400">{t.blurb}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Base>
+
+<script>
+  const form = document.getElementById('tool-form') as HTMLFormElement;
+  const input = document.getElementById('tool-url') as HTMLInputElement;
+  const btn = document.getElementById('tool-btn') as HTMLButtonElement;
+  const out = document.getElementById('tool-out')!;
+  const summary = document.getElementById('tool-summary')!;
+  const rows = document.getElementById('tool-rows')!;
+  const chain = document.getElementById('tool-chain')!;
+  const cta = document.getElementById('tool-cta')!;
+  const ctaLink = document.getElementById('tool-cta-link') as HTMLAnchorElement;
+  const label = btn.textContent;
+
+  const TONE: Record<string, string> = {
+    good: 'border-brand/30 bg-brand/[0.07] text-brand-soft',
+    warn: 'border-amber-400/30 bg-amber-400/[0.07] text-amber-300',
+    bad: 'border-red-400/30 bg-red-400/[0.07] text-red-300',
+  };
+  const VALUE_TONE: Record<string, string> = { good: 'text-brand-soft', warn: 'text-amber-300', bad: 'text-red-300' };
+
+  function el(tag: string, cls: string, text = '') {
+    const e = document.createElement(tag); e.className = cls; e.textContent = text; return e;
+  }
+  function showSummary(tone: string, text: string) {
+    summary.className = `flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${TONE[tone] ?? TONE.warn}`;
+    summary.replaceChildren(el('span', 'mt-1.5 size-2 shrink-0 rounded-full bg-current'), el('span', '', text));
+  }
+
+  async function run() {
+    const url = input.value.trim();
+    if (!url) { input.focus(); return; }
+    btn.disabled = true; btn.textContent = 'Checking…';
+    out.classList.remove('hidden');
+    showSummary('warn', `Checking ${url}…`);
+    rows.replaceChildren(); rows.classList.add('hidden'); chain.classList.add('hidden'); cta.classList.add('hidden');
+    try {
+      const res = await fetch(`/api/tools/check?tool=${form.dataset.tool}&url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (data.error) { showSummary('bad', data.error); return; }
+      showSummary(data.summary.tone, data.summary.text);
+      rows.replaceChildren(...data.rows.map(([k, v, tone]: [string, string, string?]) => {
+        const row = el('div', 'flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4');
+        row.append(el('dt', 'text-slate-500', k), el('dd', `break-all font-medium sm:text-right ${VALUE_TONE[tone ?? ''] ?? 'text-white'}`, v));
+        return row;
+      }));
+      rows.classList.remove('hidden');
+      if (data.chain?.length) {
+        chain.replaceChildren(...data.chain.map((h: { url: string; status: number; ms: number }, i: number) => {
+          const li = el('li', 'flex gap-3');
+          const cls = h.status < 300 ? 'text-brand-soft' : h.status < 400 ? 'text-amber-300' : 'text-red-300';
+          li.append(el('span', 'text-slate-600', `${i + 1}.`), el('span', `${cls} shrink-0`, String(h.status)), el('span', 'break-all text-slate-300', h.url), el('span', 'ml-auto shrink-0 text-slate-600', `${h.ms} ms`));
+          return li;
+        }));
+        chain.classList.remove('hidden');
+      }
+      ctaLink.href = `/signup?url=${encodeURIComponent(data.url)}`;
+      cta.classList.remove('hidden');
+      history.replaceState(null, '', `?url=${encodeURIComponent(url)}`);
+    } catch {
+      showSummary('bad', 'Something went wrong. Please try again.');
+    } finally {
+      btn.disabled = false; btn.textContent = label;
+    }
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  if (input.value) run();
+</script>

@@ -13,6 +13,13 @@ const faqs = [
   ['Which payment methods do you accept?', 'All major credit and debit cards. Prices are in USD, and any sales tax or VAT is calculated at checkout.'],
   ['Do you offer refunds?', 'Yes. If you’re not happy, email us within 14 days of your first payment for a full refund. See our refund policy for details.'],
 ];
+
+const guarantees = [
+  { title: '14-day money back', text: 'Not happy? Full refund on your first payment.', icon: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5' },
+  { title: 'Cancel any time', text: 'No contracts. Cancel from your dashboard.', icon: 'M18 6 6 18M6 6l12 12' },
+  { title: 'Secure checkout', text: 'We never see or store your card details.', icon: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4' },
+  { title: 'Free plan, for real', text: '10 monitors forever. Commercial use allowed.', icon: 'M20 12v10H4V12M2 7h20v5H2zM12 22V7' },
+];
 ---
 <Base
   title="Pricing: Free Uptime Monitoring, Pro from $8/mo | UptimeRun"
@@ -30,9 +37,9 @@ const faqs = [
       <div class="grid-bg absolute inset-0 pointer-events-none"></div>
       <div class="glow absolute inset-0 pointer-events-none"></div>
       <div class="relative mx-auto max-w-3xl px-4 sm:px-6 pt-16 sm:pt-24 text-center">
-        <p class="text-sm font-semibold text-brand">Pricing</p>
-        <h1 class="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-white text-balance">Fair pricing for every website</h1>
-        <p class="mx-auto mt-5 max-w-xl text-base sm:text-lg text-slate-400">Start free with 10 monitors. Upgrade for faster checks, more monitors and expiry alerts. All alert channels are included on every plan.</p>
+        <p class="eyebrow">Pricing</p>
+        <h1 class="mt-5 text-[2.6rem] leading-[1.05] sm:text-6xl font-semibold tracking-tight text-white text-balance"><span class="text-sheen">Fair pricing for</span> <span class="accent text-brand-soft pr-1">every website.</span></h1>
+        <p class="mx-auto mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-slate-400">Start free with 10 monitors. Upgrade for faster checks, more monitors and expiry alerts. All alert channels are included on every plan.</p>
       </div>
     </section>
 
@@ -40,22 +47,40 @@ const faqs = [
       <Pricing heading={false} compareLink={false} />
     </div>
 
+    <!-- Guarantees -->
+    <section class="px-4 sm:px-6 pb-8">
+      <div class="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-2xl bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
+        {guarantees.map((g) => (
+          <div class="flex items-start gap-3 bg-ink-950 px-5 py-5">
+            <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand-soft ring-1 ring-brand/20">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d={g.icon} /></svg>
+            </span>
+            <div>
+              <p class="text-sm font-semibold text-white">{g.title}</p>
+              <p class="mt-0.5 text-[13px] leading-snug text-slate-500">{g.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
     <!-- Feature comparison -->
     <section id="compare" class="border-t border-white/5 py-24">
       <div class="mx-auto max-w-5xl px-4 sm:px-6">
         <div class="reveal mx-auto max-w-2xl text-center">
-          <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-white">Compare plans</h2>
-          <p class="mt-4 text-slate-400">Everything included in each plan, side by side.</p>
+          <p class="eyebrow">Compare plans</p>
+          <h2 class="mt-4 text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance"><span class="text-sheen">Every feature,</span> <span class="accent text-brand-soft">side by side.</span></h2>
+          <p class="mt-4 text-slate-400">All alert channels are included on every plan. Pick the speed and scale you need.</p>
         </div>
 
-        <div class="mt-12 overflow-x-auto rounded-2xl border border-white/10">
+        <div class="card mt-12 overflow-x-auto">
           <table class="w-full min-w-[640px] text-sm">
-            <thead class="bg-ink-900/95">
+            <thead class="bg-white/[0.02]">
               <tr class="border-b border-white/10">
                 <th class="w-2/5 px-5 py-4 text-left font-medium text-slate-400">Features</th>
                 {PLANS.map((p) => (
-                  <th class="px-4 py-4 text-center">
-                    <span class:list={['block font-semibold', p.featured ? 'text-brand' : 'text-white']}>{p.name}</span>
+                  <th class:list={['px-4 py-5 text-center', p.featured && 'bg-brand/[0.06]']}>
+                    <span class:list={['block text-base font-semibold', p.featured ? 'text-brand-soft' : 'text-white']}>{p.name}</span>
                     <span class="block text-xs font-normal text-slate-500">{p.monthly ? `from $${(p.yearly / 12).toFixed(0)}/mo` : 'Free forever'}</span>
                   </th>
                 ))}
@@ -89,10 +114,10 @@ const faqs = [
               <tr class="border-t border-white/10">
                 <td class="px-5 py-5"></td>
                 {PLANS.map((p) => (
-                  <td class="px-4 py-5 text-center">
+                  <td class:list={['px-4 py-5 text-center', p.featured && 'bg-brand/[0.04]']}>
                     <a href="/signup" class:list={[
-                      'inline-flex rounded-lg px-4 py-2 text-xs font-semibold transition-colors',
-                      p.featured ? 'bg-brand text-ink-950 hover:bg-brand-soft' : 'border border-white/10 bg-white/5 text-white hover:bg-white/10',
+                      'inline-flex rounded-lg px-4 py-2 text-xs font-semibold',
+                      p.featured ? 'btn-primary text-ink-950' : 'btn-ghost text-white',
                     ]}>{p.monthly ? `Get ${p.name}` : 'Start free'}</a>
                   </td>
                 ))}
@@ -105,8 +130,8 @@ const faqs = [
 
     <section class="border-t border-white/5 py-24">
       <div class="mx-auto max-w-3xl px-4 sm:px-6">
-        <h2 class="text-center text-3xl sm:text-4xl font-semibold tracking-tight text-white">Billing questions</h2>
-        <div class="mt-12 divide-y divide-white/5 rounded-2xl border border-white/10">
+        <h2 class="text-center text-3xl sm:text-5xl font-semibold tracking-tight text-white"><span class="text-sheen">Billing</span> <span class="accent text-brand-soft">questions.</span></h2>
+        <div class="card mt-12 divide-y divide-white/5">
           {faqs.map(([q, a], i) => (
             <details class="reveal group px-6 py-5" style={`--d:${i * 70}ms`}>
               <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-white">

@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { TOOLS } from '../../data/tools';
+import { SITE } from '../../site';
+
+const jsonLd = [{
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Free website checker tools',
+  itemListElement: TOOLS.map((t, i) => ({ '@type': 'ListItem', position: i + 1, name: t.name, url: new URL(`/tools/${t.slug}`, SITE.url).href })),
+}];
+const icons: Record<string, string> = {
+  down: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  ssl: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  domain: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+  status: '<path d="M4 7h11l-3-3M20 17H9l3 3"/>',
+};
+---
+<Base title="Free Website Checker Tools: Uptime, SSL & Domain | UptimeRun"
+  description="Free tools to check if a website is down, when its SSL certificate or domain expires, and which HTTP status codes and redirects a URL returns."
+  jsonLd={jsonLd} breadcrumb={[{ name: 'Free tools', path: '/tools' }]}>
+  <Navbar />
+  <main>
+    <section class="relative overflow-hidden border-b border-white/5">
+      <div class="grid-bg absolute inset-0 pointer-events-none"></div>
+      <div class="glow absolute inset-0 pointer-events-none"></div>
+      <div class="relative mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-14 sm:pt-24 text-center">
+        <p class="text-sm font-semibold text-brand">Free tools</p>
+        <h1 class="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance">Free website checker tools</h1>
+        <p class="mx-auto mt-4 max-w-xl text-slate-400 text-balance">Quick, free checks for any website: is it up, when do its SSL certificate and domain expire, and where do its redirects lead. No sign-up needed.</p>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+      <div class="grid gap-5 sm:grid-cols-2">
+        {TOOLS.map((t) => (
+          <a href={`/tools/${t.slug}`} class="group rounded-2xl border border-white/10 bg-ink-900/60 p-6 hover:border-brand/40 transition-colors">
+            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={icons[t.id]} />
+            </span>
+            <h2 class="mt-4 text-lg font-semibold text-white">{t.name}</h2>
+            <p class="mt-1.5 text-sm text-slate-400">{t.blurb}</p>
+            <p class="mt-4 text-sm font-medium text-brand group-hover:text-brand-soft">Open tool →</p>
+          </a>
+        ))}
+      </div>
+
+      <div class="mx-auto mt-16 max-w-3xl space-y-4 text-[15px] leading-relaxed text-slate-400">
+        <h2 class="text-2xl font-semibold tracking-tight text-white">One-off checks, or round-the-clock monitoring</h2>
+        <p>These tools run a single check from our servers whenever you ask. They’re handy for troubleshooting a site that won’t load, confirming a migration or checking a renewal date. If you’d rather not check by hand, <a href="/signup" class="text-brand hover:text-brand-soft">UptimeRun</a> watches your websites continuously and alerts you by email, Telegram, Slack or Discord the moment something breaks, with SSL and domain expiry reminders on paid plans. It’s free for up to 10 websites.</p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Base>

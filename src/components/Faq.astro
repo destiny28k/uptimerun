@@ -3,7 +3,7 @@ import { HOME_FAQ as faqs } from '../data/faq';
 ---
 <section id="faq" class="border-t border-white/5 py-24">
   <div class="mx-auto max-w-3xl px-4 sm:px-6">
-    <h2 class="text-center text-3xl sm:text-4xl font-semibold tracking-tight text-white">Uptime monitoring questions, answered</h2>
+    <h2 class="text-center text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance"><span class="text-sheen">Uptime monitoring questions,</span> <span class="accent text-brand-soft">answered.</span></h2>
     <div class="mt-12 divide-y divide-white/5 rounded-2xl border border-white/10">
       {faqs.map(([q, a], i) => (
         <details class="reveal group px-6 py-5" style={`--d:${i * 70}ms`}>

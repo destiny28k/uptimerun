@@ -132,7 +132,7 @@ const ico = 'size-4 shrink-0';
     <a href={`/dashboard/edit?id=${m.id}`} class={btn}>
       <svg viewBox="0 0 24 24" class={ico} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4ZM13 7l4 4" /></svg>Edit
     </a>
-    <form method="post" data-confirm="Delete this monitor and all its history? This can’t be undone." data-confirm-title="Delete monitor?">
+    <form method="post" data-confirm="Monitoring stops right away, and its uptime history and response times are permanently removed." data-confirm-title="Delete this monitor?" data-confirm-item={m.name} data-confirm-sub={m.url} data-confirm-ok="Delete monitor">
       <button name="action" value="delete" class="inline-flex items-center gap-2 rounded-lg border border-red-500/30 px-3.5 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10" title="Delete monitor">
         <svg viewBox="0 0 24 24" class={ico} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>Delete
       </button>

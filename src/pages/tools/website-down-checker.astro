@@ -1,0 +1,48 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+const faqs: [string, string][] = [
+  ['Is the website down for everyone or just me?', 'This tool checks the site from our servers, not from your computer. If it shows the site as up but you still can’t open it, the problem is likely on your side: your internet connection, DNS cache, browser extensions or a local firewall.'],
+  ['What does the status code mean?', 'A 2xx code (like 200 OK) means the page loaded normally. 3xx codes are redirects, 4xx codes mean the request was refused or the page wasn’t found, and 5xx codes mean the server itself had an error.'],
+  ['What is a good response time?', 'Under 500 ms is fast, under 1 second is fine for most sites. Times above 3 seconds usually mean a slow server, a heavy page or an overloaded host, and visitors start leaving.'],
+  ['How can I get alerted when my site goes down?', 'Create a free UptimeRun account and add your site. We check it around the clock and email or message you within minutes of an outage, then again when it recovers.'],
+  ['Is this tool free?', 'Yes. You can check any public website for free without signing up. To prevent abuse there is a small limit on how many checks you can run per minute.'],
+];
+---
+<ToolPage
+  slug="website-down-checker"
+  title="Website Down Checker: Is It Down or Just Me? | UptimeRun"
+  description="Free website down checker. See if a site is down for everyone or just you, with its HTTP status code, response time and final URL after redirects."
+  heading="Is the website down, or is it just you?"
+  lead="Enter any website address and we’ll check it from our servers right now. You’ll get the status code, response time and the final URL after redirects."
+  button="Check website"
+  faqs={faqs}
+>
+  <h2>How this website down checker works</h2>
+  <p>
+    When you press <strong>Check website</strong>, our servers send a real request to the address you entered, just like a visitor’s browser would. We follow any redirects (for example from <code>http://</code> to <code>https://</code>, or from the bare domain to <code>www</code>) and report what happened at the end: the HTTP status code, how long the whole request took, and the final URL the visitor lands on.
+  </p>
+  <p>
+    Because the check runs on our side, it answers the question you actually care about: <strong>is the site down for everyone, or just for me?</strong> If our check succeeds but the page won’t load for you, the cause is almost always local.
+  </p>
+
+  <h2>If the site is up but you can’t open it</h2>
+  <ul>
+    <li><strong>Refresh without cache:</strong> press Ctrl+F5 (or Cmd+Shift+R on a Mac) to skip old cached files.</li>
+    <li><strong>Try another network:</strong> switch from Wi-Fi to mobile data. If it loads, your network or router is the issue.</li>
+    <li><strong>Flush your DNS:</strong> an outdated DNS entry can send you to an old server after a site moves hosts.</li>
+    <li><strong>Disable extensions or VPN:</strong> ad blockers, privacy tools and VPNs sometimes block sites by mistake.</li>
+  </ul>
+
+  <h2>If the site really is down</h2>
+  <p>
+    A <strong>5xx</strong> status (500, 502, 503, 504) means the server or something in front of it is failing: a crashed application, an overloaded database, a broken deploy or a hosting outage. A connection error or timeout means the server didn’t answer at all, which often points to DNS problems, an expired domain, a firewall rule or a host that is offline. A <strong>4xx</strong> status means the server is running but refused this particular page, for example a 404 for a missing page or a 403 when access is blocked.
+  </p>
+  <p>
+    If it’s your own site, check your hosting dashboard and recent changes first. It’s also worth running our <a href="/tools/ssl-checker">SSL certificate checker</a> and <a href="/tools/domain-expiry-checker">domain expiry checker</a>, since an expired certificate or domain is one of the most common causes of a sudden outage.
+  </p>
+
+  <h2>Stop checking by hand</h2>
+  <p>
+    A one-time check tells you about right now. Outages, though, tend to happen at night, on weekends or while you’re busy. <a href="/signup">UptimeRun</a> checks your website as often as every 30 seconds, confirms a failure from a second check before alerting so you don’t get false alarms, and notifies you by email, Telegram, Slack or Discord. The free plan covers 10 websites, with no credit card required.
+  </p>
+</ToolPage>

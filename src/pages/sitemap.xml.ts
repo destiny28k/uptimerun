@@ -5,6 +5,11 @@ import { SITE } from '../site';
 const PAGES = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
   { path: '/pricing', priority: '0.9', changefreq: 'monthly' },
+  { path: '/tools', priority: '0.8', changefreq: 'monthly' },
+  { path: '/tools/website-down-checker', priority: '0.8', changefreq: 'monthly' },
+  { path: '/tools/ssl-checker', priority: '0.8', changefreq: 'monthly' },
+  { path: '/tools/domain-expiry-checker', priority: '0.8', changefreq: 'monthly' },
+  { path: '/tools/http-status-checker', priority: '0.8', changefreq: 'monthly' },
   { path: '/status/demo', priority: '0.6', changefreq: 'monthly' },
   { path: '/about', priority: '0.5', changefreq: 'yearly' },
   { path: '/contact', priority: '0.5', changefreq: 'yearly' },

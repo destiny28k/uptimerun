@@ -1,35 +1,98 @@
 ---
-// Styled replacement for window.confirm(). Add data-confirm="message" (and optional data-confirm-title)
-// to a <form> or a submit <button>; the action only runs after the user clicks Delete.
+// Styled replacement for window.confirm(). Add to a <form> or a submit <button>:
+//   data-confirm="message"            (required)
+//   data-confirm-title="Delete X?"    (optional heading)
+//   data-confirm-item="myshop.com"    (optional: name of the thing being deleted, shown in a card)
+//   data-confirm-sub="https://…"      (optional: second line under the item name)
+//   data-confirm-ok="Delete monitor"  (optional: label of the red button)
+// The action only runs after the user confirms.
 ---
-<dialog id="confirm-dialog" class="m-auto w-[min(26rem,calc(100%-2rem))] rounded-2xl border border-white/10 bg-ink-900 p-0 text-slate-300 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm">
-  <div class="p-6">
-    <span class="grid size-11 place-items-center rounded-full bg-red-500/15 text-red-400">
-      <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
-    </span>
-    <h2 data-title class="mt-4 text-lg font-semibold text-white">Are you sure?</h2>
-    <p data-message class="mt-1.5 text-sm text-slate-400"></p>
-    <div class="mt-6 flex justify-end gap-2">
-      <button type="button" data-cancel class="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/5">Cancel</button>
-      <button type="button" data-ok class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400">Delete</button>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message"
+  class="confirm-dlg m-auto w-[min(28rem,calc(100%-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-ink-900 p-0 text-slate-300 shadow-[0_40px_120px_-20px_rgb(0_0_0/0.8)] backdrop:bg-black/60 backdrop:backdrop-blur-md">
+  <!-- soft red glow at the top -->
+  <div class="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(239_68_68/0.16),transparent)]"></div>
+
+  <div class="relative p-6 sm:p-7">
+    <div class="flex items-start gap-4">
+      <span class="relative grid size-11 shrink-0 place-items-center rounded-xl bg-red-500/10 text-red-400 ring-1 ring-red-500/25">
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+      </span>
+      <div class="min-w-0 flex-1 pt-0.5">
+        <h2 id="confirm-title" data-title class="text-lg font-semibold tracking-tight text-white">Are you sure?</h2>
+        <p id="confirm-message" data-message class="mt-1 text-sm leading-relaxed text-slate-400"></p>
+      </div>
+      <button type="button" data-cancel aria-label="Close" class="-mr-2 -mt-2 grid size-8 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+      </button>
     </div>
+
+    <!-- What is being deleted -->
+    <div data-item-box class="mt-5 hidden items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+      <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-slate-400">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      </span>
+      <div class="min-w-0">
+        <p data-item class="truncate text-sm font-medium text-white"></p>
+        <p data-sub class="truncate text-xs text-slate-500"></p>
+      </div>
+    </div>
+
+    <p class="mt-4 flex items-center gap-2 rounded-lg bg-red-500/[0.06] px-3 py-2 text-xs font-medium text-red-300/90 ring-1 ring-red-500/15">
+      <svg viewBox="0 0 24 24" class="size-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      This action is permanent and can’t be undone.
+    </p>
+  </div>
+
+  <div class="relative flex flex-col-reverse gap-2 border-t border-white/[0.06] bg-black/20 px-6 py-4 sm:flex-row sm:justify-end sm:px-7">
+    <button type="button" data-cancel class="rounded-xl px-4 py-2.5 text-sm font-medium text-slate-300 ring-1 ring-white/10 hover:bg-white/5 hover:text-white transition-colors">Cancel</button>
+    <button type="button" data-ok class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-red-500 to-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_8px_24px_-8px_rgb(239_68_68/0.6)] hover:brightness-110 disabled:opacity-70 transition">
+      <svg data-spin viewBox="0 0 24 24" class="hidden size-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6" /></svg>
+      <span data-ok-label>Delete</span>
+    </button>
   </div>
 </dialog>
+
+<style>
+  .confirm-dlg[open] { animation: dlg-in .18s cubic-bezier(.2,.8,.2,1); }
+  .confirm-dlg[open]::backdrop { animation: dlg-fade .18s ease; }
+  @keyframes dlg-in { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+  @keyframes dlg-fade { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .confirm-dlg[open], .confirm-dlg[open]::backdrop { animation: none; } }
+</style>
 
 <script>
   const dlg = document.getElementById('confirm-dialog') as HTMLDialogElement | null;
   if (dlg) {
+    const $ = <T extends HTMLElement>(s: string) => dlg.querySelector<T>(s)!;
+    const ok = $<HTMLButtonElement>('[data-ok]');
     let proceed: (() => void) | null = null;
+    let busy = false;
+
     const ask = (el: HTMLElement, onOk: () => void) => {
-      dlg.querySelector('[data-title]')!.textContent = el.dataset.confirmTitle || 'Are you sure?';
-      dlg.querySelector('[data-message]')!.textContent = el.dataset.confirm || '';
+      const d = el.dataset;
+      $('[data-title]').textContent = d.confirmTitle || 'Are you sure?';
+      $('[data-message]').textContent = d.confirm || '';
+      $('[data-item]').textContent = d.confirmItem || '';
+      $('[data-sub]').textContent = d.confirmSub || '';
+      $('[data-item-box]').classList.toggle('hidden', !d.confirmItem);
+      $('[data-item-box]').classList.toggle('flex', !!d.confirmItem);
+      $('[data-ok-label]').textContent = d.confirmOk || 'Delete';
+      ok.disabled = false; busy = false; $('[data-spin]').classList.add('hidden');
       proceed = onOk;
       dlg.showModal();
-      (dlg.querySelector('[data-cancel]') as HTMLButtonElement).focus();
+      $<HTMLButtonElement>('button.rounded-xl[data-cancel]').focus();
     };
-    dlg.querySelector('[data-cancel]')!.addEventListener('click', () => dlg.close());
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-    dlg.querySelector('[data-ok]')!.addEventListener('click', () => { dlg.close(); proceed?.(); });
+    const close = () => { if (!busy) dlg.close(); };
+    dlg.querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', close));
+    dlg.addEventListener('cancel', (e) => { if (busy) e.preventDefault(); });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+    ok.addEventListener('click', () => {
+      // Stay open with a spinner while the page submits and reloads.
+      busy = true; ok.disabled = true;
+      $('[data-spin]').classList.remove('hidden');
+      $('[data-ok-label]').textContent = 'Deleting…';
+      proceed?.();
+    });
 
     // Buttons with data-confirm (submit with that button's name/value).
     document.addEventListener('click', (e) => {

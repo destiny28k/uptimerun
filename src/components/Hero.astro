@@ -17,6 +17,17 @@ const stats = [
   { label: 'Uptime · 30d', value: '99.98%', tone: 'text-white' },
 ];
 const sideNav = ['Monitors', 'Incidents', 'Status pages', 'Alerts', 'Settings'];
+const channels = [
+  { name: 'Email', icon: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>' },
+  { name: 'Telegram', fill: true, icon: '<path d="M21.9 4.6 18.7 19.7c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.6l-4.7-1.5c-1-.3-1-1 .2-1.5L20.6 3.4c.9-.3 1.6.2 1.3 1.2Z"/>' },
+  { name: 'Slack', icon: '<rect x="3" y="10" width="8" height="3" rx="1.5"/><rect x="13" y="11" width="8" height="3" rx="1.5"/><rect x="10" y="3" width="3" height="8" rx="1.5"/><rect x="11" y="13" width="3" height="8" rx="1.5"/>' },
+  { name: 'Discord', icon: '<path d="M8 6.5C6.5 6.8 5 7.4 4 8c-1.5 3-2 6-1.7 9 1.5 1.1 3 1.8 4.5 2.2l1-1.7M16 6.5c1.5.3 3 .9 4 1.5 1.5 3 2 6 1.7 9-1.5 1.1-3 1.8-4.5 2.2l-1-1.7M7 17c3.2 1.3 6.8 1.3 10 0M7 7.5c3.2-1.3 6.8-1.3 10 0"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/>' },
+];
+const facts = [
+  { title: 'Runs on Cloudflare’s global network', text: 'Fast, reliable checks from the edge' },
+  { title: 'No false alarms', text: 'Every failure is re-checked before we alert you' },
+  { title: 'Your data stays yours', text: 'We never sell or share your data' },
+];
 
 // Response-time sparkline (SVG 400x90).
 const W = 400, H = 90, max = 350;
@@ -28,29 +39,36 @@ const area = `${line} L${W},${H} L0,${H} Z`;
   <div class="grid-bg absolute inset-0 pointer-events-none"></div>
   <div class="glow absolute inset-0 pointer-events-none"></div>
 
-  <div class="relative mx-auto max-w-6xl px-4 sm:px-6 pt-16 sm:pt-24 pb-20">
-    <div class="mx-auto max-w-3xl text-center">
-      <h1 class="text-4xl sm:text-6xl font-semibold tracking-tight text-white text-balance">
-        <span class="mb-4 block text-sm sm:text-base font-semibold uppercase tracking-[0.2em] text-brand">Free website uptime monitoring</span>
-        Know the second your website <span class="text-brand">goes down</span>
+  <div class="relative mx-auto max-w-6xl px-4 sm:px-6 pt-16 sm:pt-24 pb-24">
+    <div class="mx-auto max-w-4xl text-center">
+      <a href="/tools" class="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] py-1 pl-1 pr-3 text-xs text-slate-300 hover:border-white/20 transition-colors">
+        <span class="rounded-full bg-brand/15 px-2 py-0.5 font-medium text-brand-soft">New</span>
+        Free website checker tools
+        <span class="text-slate-500 transition-transform group-hover:translate-x-0.5">→</span>
+      </a>
+      <h1 class="mt-7 text-[2.75rem] leading-[1.05] sm:text-7xl sm:leading-[1.02] font-semibold tracking-tight text-white text-balance">
+        <span class="mb-5 block text-xs sm:text-sm font-medium uppercase tracking-[0.25em] text-slate-400">Free website uptime monitoring</span>
+        <span class="text-sheen">Know the second your website</span> <span class="accent text-brand-soft pr-1">goes down.</span>
       </h1>
-      <p class="mx-auto mt-5 max-w-2xl text-base sm:text-lg text-slate-400 text-pretty">
+      <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-slate-400 text-pretty">
         Monitor your website, API and SSL certificate every minute. Get instant downtime alerts on Email, Telegram, Slack and Discord,
         and share a <span class="text-white font-medium">public status page</span> with your users.
       </p>
 
-      <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a href="/signup" class="w-full sm:w-auto rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-ink-950 shadow-lg shadow-brand/20 hover:bg-brand-soft transition-colors">
+      <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="/signup" class="btn-primary w-full sm:w-auto rounded-xl px-7 py-3.5 text-sm font-semibold text-ink-950">
           Start monitoring free
         </a>
-        <a href="/status/demo" class="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
+        <a href="/status/demo" class="btn-ghost w-full sm:w-auto rounded-xl px-7 py-3.5 text-sm font-semibold text-white">
           View live demo
         </a>
       </div>
-      <ul class="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-        <li>✓ No credit card</li>
-        <li>✓ 10 monitors free forever</li>
-        <li>✓ Commercial use allowed</li>
+      <ul class="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[13px] text-slate-400">
+        {['No credit card', '10 monitors free forever', 'Commercial use allowed', 'Cancel any time'].map((t) => (
+          <li class="flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" class="size-3.5 text-brand" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{t}
+          </li>
+        ))}
       </ul>
     </div>
 
@@ -154,6 +172,26 @@ const area = `${line} L${W},${H} L0,${H} Z`;
             <p class="text-xs text-slate-400 mt-0.5">Keyword "Add to cart" not found · Telegram · just now</p>
           </div>
         </div>
+      </div>
+    </div>
+    <!-- Trust strip -->
+    <div class="mx-auto mt-24 max-w-4xl">
+      <p class="text-center text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Alerts where you already are</p>
+      <ul class="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-slate-400">
+        {channels.map((c) => (
+          <li class="flex items-center gap-2.5 text-[15px] font-medium">
+            <svg viewBox="0 0 24 24" class="size-5" fill={c.fill ? 'currentColor' : 'none'} stroke={c.fill ? 'none' : 'currentColor'} stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
+            {c.name}
+          </li>
+        ))}
+      </ul>
+      <div class="mt-12 grid gap-px overflow-hidden rounded-2xl bg-white/[0.06] sm:grid-cols-3">
+        {facts.map((f) => (
+          <div class="bg-ink-950 px-6 py-5 text-center">
+            <p class="text-sm font-semibold text-white">{f.title}</p>
+            <p class="mt-1 text-[13px] text-slate-500">{f.text}</p>
+          </div>
+        ))}
       </div>
     </div>
   </div>

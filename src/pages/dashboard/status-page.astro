@@ -130,7 +130,7 @@ const input = 'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-
         <button class="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-ink-950 hover:bg-brand-soft">Save changes</button>
         <a href="/dashboard/status-pages" class="rounded-lg border border-white/10 px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">Back</a>
       </div>
-      <button name="action" value="delete" formnovalidate data-confirm="Its public link will stop working right away." data-confirm-title="Delete status page?"
+      <button name="action" value="delete" formnovalidate data-confirm="Its public link will stop working right away for everyone who has it." data-confirm-title="Delete this status page?" data-confirm-item={page.title} data-confirm-sub={publicUrl} data-confirm-ok="Delete page"
         class="rounded-lg border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-300 hover:bg-red-500/10">Delete page</button>
     </div>
   </form>

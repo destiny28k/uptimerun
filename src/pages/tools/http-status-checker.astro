@@ -1,0 +1,49 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+const faqs: [string, string][] = [
+  ['What is an HTTP status code?', 'It’s a three-digit number a server sends back with every response. It tells the browser (and search engines) whether the request worked (2xx), was redirected (3xx), was refused by the server (4xx) or failed because of a server error (5xx).'],
+  ['What is the difference between a 301 and a 302 redirect?', 'A 301 is permanent: search engines move rankings to the new address. A 302 (or 307) is temporary: search engines keep the original URL indexed. Use 301 or 308 when a page has moved for good.'],
+  ['How many redirects are too many?', 'Ideally a URL reaches its final page in zero or one redirect. Each extra hop adds delay, and long chains can waste search engine crawl budget. Browsers give up after about 20 hops, and we stop after 10.'],
+  ['Why does my page return 200 in the browser but an error here?', 'Some servers or firewalls treat automated requests differently from browsers, for example blocking unknown user agents or certain countries. If that happens to your own site, check your firewall and bot-protection rules.'],
+  ['Can I monitor a URL’s status code continuously?', 'Yes. UptimeRun checks your URLs around the clock and alerts you when they return an error status or stop responding. The free plan covers 10 URLs.'],
+];
+---
+<ToolPage
+  slug="http-status-checker"
+  title="HTTP Status Code & Redirect Checker | UptimeRun"
+  description="Free HTTP status checker. See the status code any URL returns and trace every redirect hop (301, 302, 307, 308) to the final destination page."
+  heading="HTTP status code & redirect checker"
+  lead="Check which HTTP status code a URL returns and see every redirect hop on the way to the final page, with timings."
+  button="Check status"
+  faqs={faqs}
+>
+  <h2>See exactly what a URL returns</h2>
+  <p>
+    This tool requests the URL you enter from our servers and records the response at every step. If the server answers with a redirect, we follow it and record the next response, until we reach a final page. You get the <strong>status code of each hop</strong>, the address it pointed to and how long it took, plus the final status and URL.
+  </p>
+  <p>
+    It’s useful for checking that a migration redirects correctly, that <code>http://</code> sends visitors to <code>https://</code>, that old URLs land on the right new pages, and that nothing important returns a 404 or a server error.
+  </p>
+
+  <h2>Common HTTP status codes</h2>
+  <ul>
+    <li><strong>200 OK:</strong> the page loaded successfully.</li>
+    <li><strong>301 Moved Permanently / 308 Permanent Redirect:</strong> the page has a new permanent address. Best for SEO when content has moved.</li>
+    <li><strong>302 Found / 307 Temporary Redirect:</strong> a temporary move. Search engines keep the original URL.</li>
+    <li><strong>304 Not Modified:</strong> the cached copy is still current.</li>
+    <li><strong>403 Forbidden:</strong> the server refuses access, often a firewall or permission rule.</li>
+    <li><strong>404 Not Found:</strong> there’s no page at this address.</li>
+    <li><strong>429 Too Many Requests:</strong> the server is rate limiting.</li>
+    <li><strong>500, 502, 503, 504:</strong> server-side errors, from application crashes to an overloaded or unreachable upstream server.</li>
+  </ul>
+
+  <h2>Redirect chains and SEO</h2>
+  <p>
+    Every redirect costs time: the browser must make another request before it can show anything. Chains form gradually, for example <code>http://example.com</code> → <code>https://example.com</code> → <code>https://www.example.com</code> → <code>https://www.example.com/home</code>. Each step adds latency for visitors and makes search engines work harder. Where you can, point old URLs straight at their final destination in a single 301. Also watch for redirect loops, where two URLs point at each other and the page never loads.
+  </p>
+
+  <h2>Catch broken pages automatically</h2>
+  <p>
+    Status codes change without warning when someone edits a server rule, a plugin updates or a deploy goes wrong. <a href="/signup">UptimeRun</a> checks your important URLs continuously and alerts you the moment one starts returning an error. For a quick “is it up?” answer try the <a href="/tools/website-down-checker">website down checker</a>, and keep an eye on certificates with the <a href="/tools/ssl-checker">SSL checker</a>.
+  </p>
+</ToolPage>
