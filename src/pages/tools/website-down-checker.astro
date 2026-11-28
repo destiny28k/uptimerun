@@ -1,6 +1,9 @@
 ---
 import ToolPage from '../../components/ToolPage.astro';
 const faqs: [string, string][] = [
+  ['How do I check if a website is down?', 'Enter the site’s address in the website down checker above and press Check website. We request it from our servers and tell you whether it answered, with the HTTP status code and response time. If it fails here too, the site is down for everyone, not just you.'],
+  ['Is my website down, or is it my internet?', 'If our check shows the site as up, the problem is on your side: try another network such as mobile data, clear your browser cache or flush your DNS. If our check also fails, your website really is down and you should check your hosting, recent changes, SSL certificate and domain.'],
+  ['Can an expired domain or SSL certificate take a website down?', 'Yes. When a domain expires, its DNS usually stops working and the site and email go offline. When an SSL certificate expires, the site still loads but browsers block it with a security warning. Check both with our free SSL checker and domain expiry checker.'],
   ['Is the website down for everyone or just me?', 'This tool checks the site from our servers, not from your computer. If it shows the site as up but you still can’t open it, the problem is likely on your side: your internet connection, DNS cache, browser extensions or a local firewall.'],
   ['What does the status code mean?', 'A 2xx code (like 200 OK) means the page loaded normally. 3xx codes are redirects, 4xx codes mean the request was refused or the page wasn’t found, and 5xx codes mean the server itself had an error.'],
   ['What is a good response time?', 'Under 500 ms is fast, under 1 second is fine for most sites. Times above 3 seconds usually mean a slow server, a heavy page or an overloaded host, and visitors start leaving.'],
@@ -11,7 +14,7 @@ const faqs: [string, string][] = [
 <ToolPage
   slug="website-down-checker"
   title="Website Down Checker: Is It Down or Just Me? | UptimeRun"
-  description="Free website down checker. See if a site is down for everyone or just you, with its HTTP status code, response time and final URL after redirects."
+  description="Free website down checker and website status checker. See if a site is down for everyone or just you, with its status code, response time and final URL."
   heading="Is the website down, or is it just you?"
   lead="Enter any website address and we’ll check it from our servers right now. You’ll get the status code, response time and the final URL after redirects."
   button="Check website"
@@ -38,7 +41,7 @@ const faqs: [string, string][] = [
     A <strong>5xx</strong> status (500, 502, 503, 504) means the server or something in front of it is failing: a crashed application, an overloaded database, a broken deploy or a hosting outage. A connection error or timeout means the server didn’t answer at all, which often points to DNS problems, an expired domain, a firewall rule or a host that is offline. A <strong>4xx</strong> status means the server is running but refused this particular page, for example a 404 for a missing page or a 403 when access is blocked.
   </p>
   <p>
-    If it’s your own site, check your hosting dashboard and recent changes first. It’s also worth running our <a href="/tools/ssl-checker">SSL certificate checker</a> and <a href="/tools/domain-expiry-checker">domain expiry checker</a>, since an expired certificate or domain is one of the most common causes of a sudden outage.
+    To see every redirect hop and the exact server response, run the URL through our <a href="/tools/http-status-checker">HTTP status code checker</a>. If it’s your own site, check your hosting dashboard and recent changes first. It’s also worth running our <a href="/tools/ssl-checker">SSL certificate checker</a> and <a href="/tools/domain-expiry-checker">domain expiry checker</a>, since an expired certificate or domain is one of the most common causes of a sudden outage.
   </p>
 
   <h2>Stop checking by hand</h2>

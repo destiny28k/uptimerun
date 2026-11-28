@@ -1,0 +1,66 @@
+---
+// Comparison hub: /compare. Targets "uptime monitoring tools compared" / "UptimeRobot alternatives".
+import Base from '../../layouts/Base.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { COMPETITORS, PRICES_CHECKED } from '../../data/competitors';
+import { SITE } from '../../site';
+
+const jsonLd = [{
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'UptimeRun compared with other uptime monitors',
+  itemListElement: COMPETITORS.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: `UptimeRun vs ${c.name}`, url: new URL(`/compare/${c.slug}`, SITE.url).href })),
+}];
+---
+<Base title="Uptime Monitoring Tools Compared: Free Plans & Prices"
+  description="Compare uptime monitoring tools: UptimeRun, UptimeRobot, Better Stack and Pingdom. Free plans, entry prices and check intervals side by side."
+  jsonLd={jsonLd} breadcrumb={[{ name: 'Compare', path: '/compare' }]}>
+  <Navbar />
+  <main>
+    <section class="relative overflow-hidden border-b border-white/5">
+      <div class="grid-bg absolute inset-0 pointer-events-none"></div>
+      <div class="glow absolute inset-0 pointer-events-none"></div>
+      <div class="relative mx-auto max-w-3xl px-4 sm:px-6 pt-16 pb-14 sm:pt-24 text-center">
+        <p class="text-sm font-semibold text-brand">Compare</p>
+        <h1 class="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white text-balance">Uptime monitoring tools compared</h1>
+        <p class="mx-auto mt-4 max-w-xl text-slate-400 text-balance">Free plans and real prices of popular uptime monitors, side by side, including where other tools are the better choice.</p>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+      <div class="overflow-x-auto rounded-xl border border-white/10">
+        <table class="w-full min-w-[560px] text-left text-sm text-slate-400">
+          <thead class="bg-white/[0.03] text-slate-300">
+            <tr><th class="px-4 py-3 font-semibold">Tool</th><th class="px-4 py-3 font-semibold">Free plan</th><th class="px-4 py-3 font-semibold">Cheapest paid plan</th><th class="px-4 py-3"></th></tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr class="bg-brand/[0.04]"><td class="px-4 py-3 font-semibold text-brand-soft">UptimeRun</td><td class="px-4 py-3">10 monitors, 5 min, commercial use</td><td class="px-4 py-3">$8/mo for 50 monitors, 1 min</td><td class="px-4 py-3"><a href="/pricing" class="text-brand hover:text-brand-soft">Pricing →</a></td></tr>
+            {COMPETITORS.map((c) => (
+              <tr><td class="px-4 py-3 font-medium text-slate-200">{c.name}</td><td class="px-4 py-3">{c.free}</td><td class="px-4 py-3">{c.entry}</td><td class="px-4 py-3"><a href={`/compare/${c.slug}`} class="text-brand hover:text-brand-soft whitespace-nowrap">vs UptimeRun →</a></td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs text-slate-500">USD per month, billed yearly, from each company’s public pricing page in {PRICES_CHECKED}.</p>
+
+      <div class="mt-12 grid gap-5 sm:grid-cols-3">
+        {COMPETITORS.map((c) => (
+          <a href={`/compare/${c.slug}`} class="group rounded-2xl border border-white/10 bg-ink-900/60 p-6 hover:border-brand/40 transition-colors">
+            <h2 class="text-lg font-semibold text-white">UptimeRun vs {c.name}</h2>
+            <p class="mt-1.5 text-sm text-slate-400">{c.lead}</p>
+            <p class="mt-4 text-sm font-medium text-brand group-hover:text-brand-soft">Read comparison →</p>
+          </a>
+        ))}
+      </div>
+
+      <div class="mx-auto mt-16 max-w-3xl space-y-4 text-[15px] leading-relaxed text-slate-400 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-white [&_a]:text-brand [&_a:hover]:text-brand-soft">
+        <h2>How to choose an uptime monitor</h2>
+        <p>Start with what you actually need to watch. If it’s websites and you want to know within a minute when one goes down, most tools will do the job and the difference is mostly price, alert channels and status pages. If you also need ping, port or cron job monitoring, on-call rotations, or transaction checks, the bigger platforms earn their higher prices.</p>
+        <p>Then compare the real monthly cost for the number of sites you have, not just the entry price. Many tools charge per monitor pack, per seat or per status page, so 50 websites can cost $8 a month with one tool and over $70 with another.</p>
+        <p>Not sure yet? Check your own site with our free <a href="/tools/website-down-checker">website down checker</a>, or <a href="/signup">start monitoring 10 websites free</a> with UptimeRun.</p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Base>

@@ -2,6 +2,8 @@
 import ToolPage from '../../components/ToolPage.astro';
 const faqs: [string, string][] = [
   ['How do I check when a domain expires?', 'Type the domain above and press Check domain. We ask the official registry for that domain extension through RDAP and show the registration expiry date and how many days are left. It works for any domain, not just your own.'],
+  ['How can I tell if my domain has expired?', 'Check it above: if the expiry date is in the past, the registration has lapsed. Other signs are that your website and email suddenly stop working, or your registrar shows the domain as expired or in redemption. Renew it at your registrar straight away.'],
+  ['When does a domain name expire?', 'On the expiry date set by the registry, which is the end of the period you paid for, usually one to ten years after registration or the last renewal. The date shown here is that registry date.'],
   ['Is this domain expiration lookup free?', 'Yes. The domain expiry checker is free, needs no sign-up and has no daily lookup limit for normal use.'],
   ['What is RDAP, and how is it different from WHOIS?', 'RDAP (Registration Data Access Protocol) is the modern, standardized replacement for WHOIS. Registries publish domain registration data through it in a structured format, so the expiry date comes straight from the source instead of being scraped from free-text WHOIS output.'],
   ['Why does it say the expiry date is not published?', 'Some registries, mostly for certain country-code domains, don’t share expiry dates publicly. In that case, check the date in your registrar’s account.'],

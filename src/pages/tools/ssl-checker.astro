@@ -2,6 +2,7 @@
 import ToolPage from '../../components/ToolPage.astro';
 const faqs: [string, string][] = [
   ['How do I check when an SSL certificate expires?', 'Enter the website address above. We look up the newest valid certificate issued for that exact hostname and show the expiry date, the number of days left and the certificate authority that issued it.'],
+  ['How do I check if an SSL certificate is valid?', 'Enter the domain above. If we find a current certificate for that exact hostname, it’s valid until the expiry date shown. In your browser you can also click the padlock (or site info icon) next to the address and open the certificate details to see who issued it and its valid-from and valid-to dates.'],
   ['Where does this data come from?', 'Every publicly trusted certificate is recorded in Certificate Transparency logs. We read those public logs and pick the newest valid certificate that covers the hostname, which is the one the site normally serves.'],
   ['What happens when an SSL certificate expires?', 'Browsers show a full-page security warning such as “Your connection is not private”. Most visitors leave immediately, online payments stop and search rankings can suffer until the certificate is renewed.'],
   ['My certificate auto-renews. Do I still need to check?', 'Yes. Automatic renewal fails more often than people expect: a changed DNS record, a firewall rule, a full disk or an expired payment method can all stop it silently. A reminder before expiry gives you time to fix it.'],
