@@ -1,25 +1,39 @@
 ---
 import ToolPage from '../../components/ToolPage.astro';
 const faqs: [string, string][] = [
-  ['How do I find out when a domain expires?', 'Type the domain above and press Check domain. We ask the official registry for that domain extension through RDAP and show the registration expiry date and how many days are left.'],
-  ['What is RDAP?', 'RDAP (Registration Data Access Protocol) is the modern, standardized replacement for WHOIS. Registries publish domain registration data through it in a structured format, so the expiry date comes straight from the source.'],
+  ['How do I check when a domain expires?', 'Type the domain above and press Check domain. We ask the official registry for that domain extension through RDAP and show the registration expiry date and how many days are left. It works for any domain, not just your own.'],
+  ['Is this domain expiration lookup free?', 'Yes. The domain expiry checker is free, needs no sign-up and has no daily lookup limit for normal use.'],
+  ['What is RDAP, and how is it different from WHOIS?', 'RDAP (Registration Data Access Protocol) is the modern, standardized replacement for WHOIS. Registries publish domain registration data through it in a structured format, so the expiry date comes straight from the source instead of being scraped from free-text WHOIS output.'],
   ['Why does it say the expiry date is not published?', 'Some registries, mostly for certain country-code domains, don’t share expiry dates publicly. In that case, check the date in your registrar’s account.'],
-  ['What happens when a domain expires?', 'Your website and email usually stop working within days. After a grace period the domain can be deleted and registered by someone else, sometimes a domain reseller who will ask a high price to sell it back.'],
+  ['Why is the expiry date different from my registrar’s?', 'Some registrars show their own renewal or billing date, which can be a few days before the registry date shown here. The registry date is when the registration actually ends; your registrar may try to auto-renew earlier.'],
+  ['What happens when a domain expires?', 'Your website and email usually stop working within days. Most domains then go through a grace period (often 0–45 days) where you can still renew at the normal price, then a redemption period of about 30 days with a recovery fee, then a 5-day pending delete. After that, anyone can register it.'],
+  ['Can I renew a domain after it expires?', 'Usually yes, during the grace period at the normal price, and during the redemption period for an extra fee (often $80–$200). Exact periods depend on the extension and registrar. Once the domain is deleted and re-registered by someone else, you can only buy it back from them.'],
+  ['When should I renew my domain?', 'Renew at least 30 days before the expiry date, and turn on auto-renew with a payment card that won’t expire first. For important domains, renewing for several years at once removes the risk for a long time.'],
+  ['Can I check who owns a domain?', 'This tool focuses on the expiry date and days left. Owner contact details are usually hidden in registration data for privacy (GDPR redaction); to reach an owner, most registrars offer a contact form or relay address.'],
   ['Can I get reminded before my domain expires?', 'Yes. Add your site to UptimeRun and paid plans email you 30, 14, 7 and 1 day before the domain or SSL certificate expires, together with uptime monitoring.'],
+];
+
+// Lifecycle of an expired generic domain (.com/.net/.org); timings vary by registrar and extension.
+const stages: [string, string, string][] = [
+  ['Active', 'Until expiry date', 'Website and email work. Renew any time at the normal price.'],
+  ['Expired / grace period', 'Day 0 to ~45', 'Site and email may stop. Renew at the normal price at your registrar.'],
+  ['Redemption period', '~30 days', 'Domain is removed from DNS. Recovery costs an extra redemption fee.'],
+  ['Pending delete', '5 days', 'Can no longer be renewed. The registry is about to release it.'],
+  ['Released', 'After deletion', 'Anyone can register it, often domain resellers within seconds.'],
 ];
 ---
 <ToolPage
   slug="domain-expiry-checker"
-  title="Domain Expiry Checker: When Does a Domain Expire? | UptimeRun"
-  description="Free domain expiry checker. Look up a domain name’s registration expiry date and days left, straight from the official registry via RDAP."
+  title="Domain Expiry Checker – Check Expiration Date | UptimeRun"
+  description="Free domain expiry checker and expiration lookup. See when any domain expires and how many days are left, straight from the official registry (RDAP)."
   heading="Domain expiry checker"
-  lead="See when a domain name’s registration expires and how many days are left, straight from the official registry."
+  lead="Check any domain’s expiration date and how many days are left, straight from the official registry. Free domain expiration lookup, no sign-up."
   button="Check domain"
   faqs={faqs}
 >
   <h2>Check a domain’s expiration date in seconds</h2>
   <p>
-    Every domain name is registered for a fixed period, usually one to ten years. When that period ends and the domain isn’t renewed, it expires. This tool looks up the official <strong>registration expiry date</strong> for any domain and shows how many days remain, colour-coded so you can spot trouble quickly: green for plenty of time, amber under 60 days and red under two weeks.
+    Every domain name is registered for a fixed period, usually one to ten years. When that period ends and the domain isn’t renewed, it expires. This domain expiry checker looks up the official <strong>registration expiry date</strong> for any domain and shows how many days remain, colour-coded so you can spot trouble quickly: green for plenty of time, amber under 60 days and red under two weeks.
   </p>
   <p>
     You can enter a bare domain like <code>example.com</code> or paste any full URL. If you enter a subdomain such as <code>shop.example.co.uk</code>, we automatically look up the registered domain, <code>example.co.uk</code>, since that’s what actually expires.
@@ -28,6 +42,37 @@ const faqs: [string, string][] = [
   <h2>Where the date comes from</h2>
   <p>
     We query <strong>RDAP</strong>, the standard protocol that domain registries use to publish registration data. It replaces the older WHOIS system and returns structured, reliable information directly from the registry responsible for each extension, such as .com, .net, .org or .io. That means the date you see is the authoritative one, not a guess or a cached copy from a third-party database.
+  </p>
+
+  <h2>How domain expiration works</h2>
+  <p>
+    A domain doesn’t vanish the moment it expires. For generic extensions like .com, .net and .org it moves through several stages, and the cost of getting it back rises at each one:
+  </p>
+  <div class="overflow-x-auto rounded-xl border border-white/10">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-white/[0.03] text-slate-300">
+        <tr><th class="px-4 py-2.5 font-semibold">Stage</th><th class="px-4 py-2.5 font-semibold">Typical length</th><th class="px-4 py-2.5 font-semibold">What happens</th></tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {stages.map(([s, t, w]) => (
+          <tr><td class="px-4 py-2.5 whitespace-nowrap font-medium text-slate-200">{s}</td><td class="px-4 py-2.5 whitespace-nowrap">{t}</td><td class="px-4 py-2.5">{w}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Grace and redemption periods are set by each registry and registrar, and many country-code domains (such as .uk, .de or .in) follow their own rules. Your registrar’s terms have the exact timings for your domain.
+  </p>
+
+  <h2>When to renew your domain</h2>
+  <ul>
+    <li><strong>More than 60 days left:</strong> you’re fine. Make sure auto-renew is on and the card on file is valid.</li>
+    <li><strong>30–60 days left:</strong> a good time to renew, or to confirm auto-renew will run. Check the renewal emails reach an inbox you read.</li>
+    <li><strong>Under 30 days:</strong> renew now. Card failures and missed emails don’t leave much time to fix things.</li>
+    <li><strong>Expired:</strong> renew immediately at your registrar while it’s still in the grace period and costs the normal price.</li>
+  </ul>
+  <p>
+    For a business-critical domain, renewing for several years at once and enabling the registrar lock is the simplest protection.
   </p>
 
   <h2>Why domains expire by accident</h2>
@@ -46,6 +91,6 @@ const faqs: [string, string][] = [
 
   <h2>Never miss a renewal</h2>
   <p>
-    Bookmark this page for quick lookups, or let <a href="/signup">UptimeRun</a> do the remembering. Add your website once and paid plans warn you 30, 14, 7 and 1 day before the domain or its <a href="/tools/ssl-checker">SSL certificate</a> expires, while uptime checks catch outages as they happen. If a site has suddenly stopped loading, the <a href="/tools/website-down-checker">website down checker</a> will tell you whether it’s down for everyone.
+    Bookmark this page for quick domain expiration checks, or let <a href="/signup">UptimeRun</a> do the remembering. Add your website once and paid plans warn you 30, 14, 7 and 1 day before the domain or its <a href="/tools/ssl-checker">SSL certificate</a> expires, while uptime checks catch outages as they happen. If a site has suddenly stopped loading, the <a href="/tools/website-down-checker">website down checker</a> will tell you whether it’s down for everyone, and the <a href="/tools/http-status-checker">HTTP status code checker</a> shows exactly what a URL returns.
   </p>
 </ToolPage>

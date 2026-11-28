@@ -2,40 +2,94 @@
 import ToolPage from '../../components/ToolPage.astro';
 const faqs: [string, string][] = [
   ['What is an HTTP status code?', 'It’s a three-digit number a server sends back with every response. It tells the browser (and search engines) whether the request worked (2xx), was redirected (3xx), was refused by the server (4xx) or failed because of a server error (5xx).'],
+  ['How do I check the HTTP status code of a URL?', 'Enter the URL in the status code checker above and press Check status. We request it from our servers and show the status code of every response, including each redirect, plus the final URL and response time. In a browser you can also open developer tools, go to the Network tab and reload the page.'],
+  ['Can I check status codes without installing anything?', 'Yes. This HTTP status code checker runs in your browser and does the request from our servers, so there’s nothing to install and no sign-up. Developers can also run curl -I https://example.com in a terminal to see the response headers and status line.'],
   ['What is the difference between a 301 and a 302 redirect?', 'A 301 is permanent: search engines move rankings to the new address. A 302 (or 307) is temporary: search engines keep the original URL indexed. Use 301 or 308 when a page has moved for good.'],
+  ['What is the difference between 301 and 308, or 302 and 307?', '307 and 308 work like 302 and 301 but guarantee that the request method and body stay the same, so a POST stays a POST. For normal web pages, 301 and 308 behave the same for SEO.'],
   ['How many redirects are too many?', 'Ideally a URL reaches its final page in zero or one redirect. Each extra hop adds delay, and long chains can waste search engine crawl budget. Browsers give up after about 20 hops, and we stop after 10.'],
+  ['What does a 404 status code mean, and is it bad for SEO?', 'A 404 means there’s no page at that address. A few 404s for pages that really are gone are normal and don’t hurt the rest of your site. They become a problem when important pages, or URLs other sites link to, return 404: redirect those to the best matching page with a 301.'],
+  ['What is a soft 404?', 'A soft 404 is a page that says “not found” to visitors but returns 200 OK to search engines. Google treats it like a 404 anyway and it wastes crawl budget, so missing pages should return a real 404 or 410 status.'],
+  ['What causes a 500, 502, 503 or 504 error?', '500 is a crash or bug in the website’s own code. 502 and 504 mean a proxy or CDN couldn’t get a good or timely answer from the origin server. 503 means the server is overloaded or in maintenance. All of them are worth monitoring, because visitors and search engines see an error page.'],
   ['Why does my page return 200 in the browser but an error here?', 'Some servers or firewalls treat automated requests differently from browsers, for example blocking unknown user agents or certain countries. If that happens to your own site, check your firewall and bot-protection rules.'],
-  ['Can I monitor a URL’s status code continuously?', 'Yes. UptimeRun checks your URLs around the clock and alerts you when they return an error status or stop responding. The free plan covers 10 URLs.'],
+  ['Can I check many URLs or monitor a status code continuously?', 'Yes. UptimeRun checks your URLs around the clock and alerts you by email, Telegram, Slack or Discord when they return an error status or stop responding. The free plan covers 10 URLs, checked every 5 minutes.'],
 ];
+
+// HTTP status code reference table: [code, name, meaning]
+const codes: [string, string, string][] = [
+  ['100', 'Continue', 'The server got the request headers; the client can send the body.'],
+  ['101', 'Switching Protocols', 'The server is switching protocol, e.g. upgrading to WebSockets.'],
+  ['200', 'OK', 'Success. The page or resource was returned normally.'],
+  ['201', 'Created', 'A new resource was created, typically after a POST to an API.'],
+  ['204', 'No Content', 'Success, but there’s no body to return.'],
+  ['206', 'Partial Content', 'Only part of the file was sent, used for video and resumable downloads.'],
+  ['301', 'Moved Permanently', 'The URL has moved for good. Passes rankings to the new address.'],
+  ['302', 'Found', 'Temporary redirect. Search engines keep the original URL indexed.'],
+  ['303', 'See Other', 'Redirect to a different page with GET, often after a form submit.'],
+  ['304', 'Not Modified', 'The cached copy is still current, so nothing is re-sent.'],
+  ['307', 'Temporary Redirect', 'Like 302, but the request method must not change.'],
+  ['308', 'Permanent Redirect', 'Like 301, but the request method must not change.'],
+  ['400', 'Bad Request', 'The server couldn’t understand the request, e.g. a malformed URL.'],
+  ['401', 'Unauthorized', 'Authentication is required, such as a login or API key.'],
+  ['403', 'Forbidden', 'The server refuses access, often a firewall or permission rule.'],
+  ['404', 'Not Found', 'There’s no page at this address.'],
+  ['405', 'Method Not Allowed', 'The URL exists but doesn’t accept this method (e.g. POST).'],
+  ['408', 'Request Timeout', 'The client took too long to send the request.'],
+  ['410', 'Gone', 'The page was removed on purpose and won’t come back.'],
+  ['429', 'Too Many Requests', 'Rate limited: too many requests in a short time.'],
+  ['500', 'Internal Server Error', 'Generic server crash or bug in the site’s code.'],
+  ['502', 'Bad Gateway', 'A proxy or CDN got an invalid answer from the origin server.'],
+  ['503', 'Service Unavailable', 'The server is overloaded or down for maintenance.'],
+  ['504', 'Gateway Timeout', 'A proxy or CDN timed out waiting for the origin server.'],
+  ['521', 'Web Server Is Down', 'Cloudflare-specific: the origin server refused the connection.'],
+  ['522', 'Connection Timed Out', 'Cloudflare-specific: the origin server didn’t respond in time.'],
+];
+const tone = (c: string) => c < '300' ? 'text-brand-soft' : c < '400' ? 'text-amber-300' : 'text-red-300';
 ---
 <ToolPage
   slug="http-status-checker"
-  title="HTTP Status Code & Redirect Checker | UptimeRun"
-  description="Free HTTP status checker. See the status code any URL returns and trace every redirect hop (301, 302, 307, 308) to the final destination page."
-  heading="HTTP status code & redirect checker"
-  lead="Check which HTTP status code a URL returns and see every redirect hop on the way to the final page, with timings."
+  title="HTTP Status Code Checker: Free Redirect Checker | UptimeRun"
+  description="Free HTTP status code checker. Enter any URL to see its status code (200, 301, 404, 500…), trace every redirect hop and look up what each code means."
+  heading="HTTP status code checker"
+  lead="Check which HTTP status code any URL returns and trace every redirect hop to the final page, with timings. Free, no sign-up."
   button="Check status"
   faqs={faqs}
 >
-  <h2>See exactly what a URL returns</h2>
+  <h2>Check the status code of any URL</h2>
   <p>
-    This tool requests the URL you enter from our servers and records the response at every step. If the server answers with a redirect, we follow it and record the next response, until we reach a final page. You get the <strong>status code of each hop</strong>, the address it pointed to and how long it took, plus the final status and URL.
+    This HTTP status code checker requests the URL you enter from our servers and records the response at every step. If the server answers with a redirect, we follow it and record the next response, until we reach a final page. You get the <strong>status code of each hop</strong>, the address it pointed to and how long it took, plus the final status code and URL.
   </p>
   <p>
     It’s useful for checking that a migration redirects correctly, that <code>http://</code> sends visitors to <code>https://</code>, that old URLs land on the right new pages, and that nothing important returns a 404 or a server error.
   </p>
 
-  <h2>Common HTTP status codes</h2>
+  <h2>How to read the result</h2>
   <ul>
-    <li><strong>200 OK:</strong> the page loaded successfully.</li>
-    <li><strong>301 Moved Permanently / 308 Permanent Redirect:</strong> the page has a new permanent address. Best for SEO when content has moved.</li>
-    <li><strong>302 Found / 307 Temporary Redirect:</strong> a temporary move. Search engines keep the original URL.</li>
-    <li><strong>304 Not Modified:</strong> the cached copy is still current.</li>
-    <li><strong>403 Forbidden:</strong> the server refuses access, often a firewall or permission rule.</li>
-    <li><strong>404 Not Found:</strong> there’s no page at this address.</li>
-    <li><strong>429 Too Many Requests:</strong> the server is rate limiting.</li>
-    <li><strong>500, 502, 503, 504:</strong> server-side errors, from application crashes to an overloaded or unreachable upstream server.</li>
+    <li><strong>Green (2xx):</strong> the URL works and returned content.</li>
+    <li><strong>Amber (3xx):</strong> a redirect. Look at the chain to see where it leads and whether it’s permanent (301/308) or temporary (302/307).</li>
+    <li><strong>Red (4xx/5xx):</strong> an error. 4xx usually means a wrong URL or blocked request; 5xx means the server itself failed.</li>
   </ul>
+
+  <h2>HTTP status code reference</h2>
+  <p>
+    Status codes are grouped by their first digit: <strong>1xx</strong> informational, <strong>2xx</strong> success, <strong>3xx</strong> redirection, <strong>4xx</strong> client errors and <strong>5xx</strong> server errors. These are the codes you’re most likely to see when checking a website:
+  </p>
+  <div class="overflow-x-auto rounded-xl border border-white/10">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-white/[0.03] text-slate-300">
+        <tr><th class="px-4 py-2.5 font-semibold">Code</th><th class="px-4 py-2.5 font-semibold">Name</th><th class="px-4 py-2.5 font-semibold">What it means</th></tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {codes.map(([c, n, m]) => (
+          <tr><td class={`px-4 py-2.5 font-mono font-semibold ${tone(c)}`}>{c}</td><td class="px-4 py-2.5 whitespace-nowrap text-slate-200">{n}</td><td class="px-4 py-2.5">{m}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Which status codes matter for SEO?</h2>
+  <p>
+    Search engines only index pages that return <strong>200</strong>. A <strong>301 or 308</strong> tells Google a page has moved and transfers its signals to the new URL, while a <strong>302 or 307</strong> keeps the old URL in the index. <strong>404 and 410</strong> pages are eventually dropped from search results, and repeated <strong>5xx</strong> errors make Google crawl your site less often and can remove pages if they persist. A quick status code check after every deploy or redesign catches these before your rankings do.
+  </p>
 
   <h2>Redirect chains and SEO</h2>
   <p>
@@ -44,6 +98,6 @@ const faqs: [string, string][] = [
 
   <h2>Catch broken pages automatically</h2>
   <p>
-    Status codes change without warning when someone edits a server rule, a plugin updates or a deploy goes wrong. <a href="/signup">UptimeRun</a> checks your important URLs continuously and alerts you the moment one starts returning an error. For a quick “is it up?” answer try the <a href="/tools/website-down-checker">website down checker</a>, and keep an eye on certificates with the <a href="/tools/ssl-checker">SSL checker</a>.
+    Status codes change without warning when someone edits a server rule, a plugin updates or a deploy goes wrong. <a href="/signup">UptimeRun</a> checks your important URLs continuously and alerts you the moment one starts returning an error. For a quick “is it up?” answer try the <a href="/tools/website-down-checker">website down checker</a>, and keep an eye on certificates with the <a href="/tools/ssl-checker">SSL checker</a> and renewals with the <a href="/tools/domain-expiry-checker">domain expiry checker</a>.
   </p>
 </ToolPage>
